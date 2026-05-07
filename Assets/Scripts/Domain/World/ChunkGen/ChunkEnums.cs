@@ -4,10 +4,10 @@
 public enum GroundType
 {
     Grassland,
-    Desert,
-    Forest,
-    Snow,
-    Swamp,
+    Roadway_2way_Straight,
+    Roadway_2way_Curved,
+    Roadway_3way,
+    Roadway_4way,
 }
 
 /// <summary>
@@ -17,8 +17,5 @@ public enum ElementType
 {
     Tree,
     Rock,
-    Bush,
-    Flower,
-    Cactus,
-    DeadTree,
+    Structure,
 }
