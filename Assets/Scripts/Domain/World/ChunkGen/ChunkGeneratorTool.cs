@@ -34,7 +34,7 @@ public class ChunkGeneratorTool : MonoBehaviour
 
     [Header("Save Settings")]
     [Tooltip("프리팹이 저장될 경로. Assets/ 로 시작해야 합니다.")]
-    [SerializeField] private string savePath = "Assets/Prefabs/GeneratedChunks";
+    [SerializeField] private string savePath = "Assets/Prefabs/World/GeneratedChunks";
 
     [Tooltip("어드레서블 그룹 이름. 없으면 신규 생성됩니다.")]
     [SerializeField] private string addressableGroup = "Chunks";
@@ -64,21 +64,30 @@ public class ChunkGeneratorTool : MonoBehaviour
         int total     = mapConfig.gridWidth * mapConfig.gridHeight;
         int generated = 0;
 
+        ChunkPreset[,] chunkPresets = new ChunkPreset[mapConfig.gridHeight, mapConfig.gridWidth];
+
+        ChunkSelector chunkSelector = new ChunkSelector(mapConfig, chunkPresets);
         try
         {
-            for (int x = 0; x < mapConfig.gridWidth; x++)
+            for (int z = 0; z < mapConfig.gridHeight; z++)
             {
-                for (int z = 0; z < mapConfig.gridHeight; z++)
+                for (int x = 0; x < mapConfig.gridWidth; x++)
                 {
                     string key = ChunkMapConfig.ChunkKey(x, z);
                     EditorUtility.DisplayProgressBar(
                         "청크 생성 중",
                         $"{key} ({generated + 1}/{total})",
                         (float)generated / total);
-
-                    var preset      = dataConfig.chunkPresets[rng.Next(dataConfig.chunkPresets.Length)];
+                    var preset = chunkSelector.SelectChunk(dataConfig, rng, x, z);
+                    if (preset == null)
+                    {
+                        Debug.LogWarning("Preset Null");
+                        continue;
+                    }
                     int chunkSeed   = rng.Next();
                     var worldOrigin = mapConfig.ChunkCoordToWorld(new UnityEngine.Vector2Int(x, z));
+
+                    chunkPresets[z, x] = preset;
 
                     GenerateAndSaveChunk(preset, worldOrigin, chunkSeed, key, settings, group);
                     generated++;

@@ -43,7 +43,7 @@ public class ChunkSpawner : MonoBehaviour
         var chunkRoot = new GameObject($"Chunk_{preset.name}");
         chunkRoot.transform.position = worldOrigin;
 
-        BuildGround(preset.groundType, chunkRoot.transform, dataConfig.groundPool);
+        BuildGround(preset, chunkRoot.transform, dataConfig.groundPool);
         BuildElements(preset, chunkRoot.transform, seed, dataConfig);
 
         return chunkRoot;
@@ -53,12 +53,12 @@ public class ChunkSpawner : MonoBehaviour
     // Private helpers
     // ---------------------------------------------------------------
 
-    private static void BuildGround(GroundType groundType, Transform parent, GroundPool groundPool)
+    private static void BuildGround(ChunkPreset preset, Transform parent, GroundPool groundPool)
     {
-        var prefab = groundPool.GetRandomPrefab(groundType);
+        var prefab = groundPool.GetRandomPrefab(preset.groundType);
         if (prefab == null) return;
 
-        Object.Instantiate(prefab, parent.position, Quaternion.identity, parent);
+        Object.Instantiate(prefab, parent.position, Quaternion.Euler(preset.rotation), parent);
     }
 
     private static void BuildElements(

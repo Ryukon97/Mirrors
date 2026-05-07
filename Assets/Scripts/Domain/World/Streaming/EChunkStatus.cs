@@ -1,1 +1,0 @@
-public enum EChunkStatus { Unloaded, Loaded, Unloading, Loading}
