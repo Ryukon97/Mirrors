@@ -11,12 +11,11 @@ public class BattleManager : MonoBehaviour
     public Enemy enemy;
 
     [Header("UI References")]
-    public Transform timelineContainer; // 아이콘들이 나열될 부모 UI (Horizontal Layout Group 적용)
-    public GameObject timelineIconPrefab; // TimelineIcon Prefab 할당
+    public Transform timelineContainer; // Vertical Layout Group이 붙은 패널
+    public GameObject timelineIconPrefab;
 
-    // 리스트는 복수형 사용, 멤버 변수는 lowerCamelCase
     private List<BattleUnitOrder> turnTimeline = new List<BattleUnitOrder>();
-    private List<GameObject> activeTimelineIcons = new List<GameObject>(); // 생성된 아이콘 관리용
+    private List<GameObject> activeTimelineIcons = new List<GameObject>();
 
     public EBattleState CurrentState { get; private set; }
 
@@ -32,6 +31,7 @@ public class BattleManager : MonoBehaviour
 
     public void OnAttackButtonClick()
     {
+        // 플레이어 턴일 때만 버튼 작동
         if (CurrentState != EBattleState.PlayerTurn)
         {
             return;
@@ -44,6 +44,7 @@ public class BattleManager : MonoBehaviour
     {
         turnTimeline.Clear();
 
+        // 임의의 속도 계산 (Player: 100, Enemy: 80)
         float playerAV = 10000f / 100f;
         float enemyAV = 10000f / 80f;
 
@@ -52,7 +53,6 @@ public class BattleManager : MonoBehaviour
 
         turnTimeline = turnTimeline.OrderBy(unit => unit.actionValue).ToList();
 
-        // UI 갱신 함수 호출
         UpdateTimelineUI();
     }
 
@@ -60,44 +60,38 @@ public class BattleManager : MonoBehaviour
 
     private void DetermineNextTurn()
     {
-        if (turnTimeline.Count == 0)
-        {
-            return;
-        }
+        if (turnTimeline.Count == 0) return;
 
-        var nextUnit = turnTimeline[0];
+        BattleUnitOrder nextUnit = turnTimeline[0];
 
         if (nextUnit.unitType == ECharacterType.Player)
         {
             CurrentState = EBattleState.PlayerTurn;
-            Debug.Log("<color=green>[Turn]</color> 플레이어의 턴입니다.");
+            Debug.Log("<color=green>[Turn]</color> 플레이어의 턴입니다. 버튼을 누르세요.");
         }
         else
         {
             CurrentState = EBattleState.EnemyTurn;
+            Debug.Log("<color=red>[Turn]</color> 적의 턴입니다. 자동으로 공격합니다.");
             StartCoroutine(EnemyTurnSequence());
         }
     }
 
-    // [추가된 함수] 타임라인 UI를 화면에 생성하고 업데이트하는 함수
     private void UpdateTimelineUI()
     {
-        // 1. 기존 생성되어 있는 UI 아이콘 모두 제거
-        foreach (var icon in activeTimelineIcons)
+        foreach (GameObject icon in activeTimelineIcons)
         {
             Destroy(icon);
         }
         activeTimelineIcons.Clear();
 
-        // 2. 새로운 순서대로 아이콘 생성
-        foreach (var unit in turnTimeline)
+        foreach (BattleUnitOrder unit in turnTimeline)
         {
-            // 컨테이너(Horizontal Layout Group)의 자식으로 생성
-            GameObject iconObj = Instantiate(timelineIconPrefab, timelineContainer);
-            activeTimelineIcons.Add(iconObj);
-
-            // TODO: 여기서 초상화 이미지(Image 컴포넌트)를 unitType에 따라 바꿔줄 수 있습니다.
-            // 예: ECharacterType.Player 라면 플레이어 스프라이트로 변경
+            if (timelineIconPrefab != null)
+            {
+                GameObject iconObj = Instantiate(timelineIconPrefab, timelineContainer);
+                activeTimelineIcons.Add(iconObj);
+            }
         }
     }
 
@@ -105,6 +99,7 @@ public class BattleManager : MonoBehaviour
     {
         CurrentState = EBattleState.Busy;
 
+        // 플레이어가 적에게 다가가서 공격하고 복귀
         yield return StartCoroutine(player.AttackSequence());
 
         if (enemy.CurrentHp > 0)
