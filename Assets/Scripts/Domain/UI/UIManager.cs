@@ -1,23 +1,62 @@
-//using UnityEngine;
+using UnityEngine;
+using UnityEngine.InputSystem;
 
-//public class UIManager : MonoBehaviour
-//{
-//    public GameObject TitlePanel;
-//    public GameObject MenuPanel;
+public class TitleManager : MonoBehaviour
+{
+  
+    public GameObject TitlePanel;
+    public GameObject MenuPanel;
 
-//    private bool isTitleActive = true; // 터치관련
+   
+    public InputAction AnyKeyAction;
 
-//    void Start() // 인트로 시작될때 패널 상태 
-//    {
-//        TitlePanel.SetActive(true);
-//        MenuPanel.SetActive(false);
-//    }
+    
+    private bool isTitleActive = true;
 
-//    void Update()
-//    {
-//        if (isTitleActive && )
-//        {
+  
+    private void OnEnable()
+    {
+        
+        AnyKeyAction.Enable();
+      
+        AnyKeyAction.performed += OnAnyKeyPressed;
+    }
 
-//        }
-//    }
-//}
+    private void OnDisable()
+    {
+        
+        AnyKeyAction.performed -= OnAnyKeyPressed;
+        AnyKeyAction.Disable();
+    }
+
+    private void Start()
+    {
+        TitlePanel.SetActive(true);
+        MenuPanel.SetActive(false);
+    }
+
+  
+    public void OnClickStart() => Debug.Log("게임을 시작합니다");
+
+    public void OnClickExit()
+    {
+        Debug.Log("게임을 종료합니다");
+        Application.Quit();
+    }
+
+   
+    private void OnAnyKeyPressed(InputAction.CallbackContext context)
+    {
+        if (isTitleActive)
+        {
+            ShowMenu();
+        }
+    }
+
+    private void ShowMenu()
+    {
+        isTitleActive = false;
+        TitlePanel.SetActive(false);
+        MenuPanel.SetActive(true);
+    }
+}
