@@ -7,7 +7,7 @@ public class Enemy : MonoBehaviour
     private const float ATTACK_DISTANCE = 1.5f;
     private const float MOVE_SPEED = 10.0f;
 
-    private int currentHp = 100;
+    private int currentHp = 200;
     private Vector3 originalPosition;
 
     public int CurrentHp => currentHp;
