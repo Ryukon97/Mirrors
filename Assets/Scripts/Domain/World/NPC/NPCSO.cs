@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "NPCSO", menuName = "Scriptable Objects/NPCSO")]
+[CreateAssetMenu(fileName = "NPCSO", menuName = "World/NPCSO")]
 public class NPCSO : ScriptableObject
 {
     public string Name;
