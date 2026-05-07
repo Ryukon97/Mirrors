@@ -15,33 +15,29 @@ public class Enemy : MonoBehaviour
     // --------------- Unity Life Cycle --------------
     private void Start()
     {
-        // 초기 위치 저장
         originalPosition = transform.position;
     }
 
     // --------------- public APIs --------------
 
-    // 적의 공격 시퀀스 (플레이어와 동일한 메커니즘)
     public IEnumerator AttackSequence(Transform target)
     {
-        // 1. 플레이어 방향으로 이동
+        // 1. 타겟(플레이어) 방향으로 이동
         Vector3 targetPos = target.position + (transform.position - target.position).normalized * ATTACK_DISTANCE;
-
         while (Vector3.Distance(transform.position, targetPos) > 0.1f)
         {
             transform.position = Vector3.MoveTowards(transform.position, targetPos, MOVE_SPEED * Time.deltaTime);
             yield return null;
         }
 
-        // 2. 데미지 입히기
-        Debug.Log("<color=blue>[적 공격]</color> 플레이어에게 피해를 입혔습니다!");
+        // 2. 공격 수행 및 데미지 전달
+        Debug.Log("<color=blue>[적 공격]</color> 적이 플레이어를 타격했습니다!");
         BattleCharacter player = target.GetComponent<BattleCharacter>();
         if (player != null)
         {
             player.TakeDamage(15);
         }
-
-        yield return new WaitForSeconds(0.2f);
+        yield return new WaitForSeconds(0.3f);
 
         // 3. 원래 위치로 복귀
         while (Vector3.Distance(transform.position, originalPosition) > 0.1f)
@@ -56,6 +52,6 @@ public class Enemy : MonoBehaviour
     public void TakeDamage(int damage)
     {
         currentHp -= damage;
-        Debug.Log($"적 피격! 남은 HP: {currentHp}");
+        Debug.Log($"적 HP 감소: {currentHp}");
     }
 }
