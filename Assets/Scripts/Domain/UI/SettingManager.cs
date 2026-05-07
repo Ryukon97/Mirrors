@@ -85,7 +85,7 @@ public class SettingManager : MonoBehaviour
         PlayerPrefs.SetFloat("SavedSound", SoundSlider.value);
     
         PlayerPrefs.Save();
-        ResumeGame();
+      
     }
 
     public void OpenSettingPanel()
