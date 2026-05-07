@@ -10,6 +10,7 @@ public class ChunkPreset : ScriptableObject
 {
     [Header("Ground")]
     public GroundType groundType;
+    public Vector3 rotation;
 
     [Header("Allowed Elements")]
     public List<ElementType> elementTypes = new();
