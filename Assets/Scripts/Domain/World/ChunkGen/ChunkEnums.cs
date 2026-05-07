@@ -4,6 +4,8 @@
 public enum GroundType
 {
     Grassland,
+    Roadway_0way,
+    Roadway_1way,
     Roadway_2way_Straight,
     Roadway_2way_Curved,
     Roadway_3way,
