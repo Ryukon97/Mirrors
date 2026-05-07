@@ -17,6 +17,7 @@ public class TextController : MonoBehaviour
 
     // ---------------- public ---------------- 
     public void ChangeText(string newText) => textModel.ChangeText(newText);
+    public void RequestView() => textModel.RequestView();
 
     // ----------------  private ---------------- 
     private void HandleViewRequested(string text) => textView.UpdateView(text);
