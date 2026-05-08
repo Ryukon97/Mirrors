@@ -17,7 +17,7 @@ public enum GroundType
 /// </summary>
 public enum ElementType
 {
-    Tree,
-    Rock,
-    Structure,
+    S_Building,
+    M_Building,
+    H_Building,
 }
