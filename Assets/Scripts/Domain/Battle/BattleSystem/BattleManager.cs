@@ -217,25 +217,27 @@ public class BattleManager : MonoBehaviour
     {
         CurrentState = EBattleState.Busy;
 
-        // [핵심] 현재 타임라인 맨 앞에 있는 유닛의 정보를 가져옴
         BattleUnitOrder currentUnit = turnTimeline[0];
         Enemy actingEnemy = currentUnit.enemyReference;
 
-        // 해당 적이 살아있다면 그 적이 공격 실행
         if (actingEnemy != null && actingEnemy.CurrentHp > 0)
         {
-            Debug.Log($"<color=red>[적 공격]</color> {currentUnit.unitName}가 공격합니다.");
             yield return StartCoroutine(actingEnemy.AttackSequence(player.transform));
+        }
+
+        // 플레이어 사망 체크
+        if (player.CurrentHp <= 0)
+        {
+            CurrentState = EBattleState.Lost;
+            Debug.Log("<color=black>전투 패배...</color>");
+            // 여기에 게임 오버 팝업 띄우기 등의 로직 추가
         }
         else
         {
-            // 만약 해당 적이 이미 죽었다면 그냥 넘어감
-            Debug.Log($"{currentUnit.unitName}가 이미 사망하여 턴을 스킵합니다.");
+            CycleFinishedUnit();
+            yield return new WaitForSeconds(0.5f);
+            DetermineNextTurn();
         }
-
-        CycleFinishedUnit();
-        yield return new WaitForSeconds(0.5f);
-        DetermineNextTurn();
     }
 
     // 7. 데이터 순환 로직

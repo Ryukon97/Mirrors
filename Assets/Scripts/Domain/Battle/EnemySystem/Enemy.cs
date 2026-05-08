@@ -45,11 +45,13 @@ public class Enemy : MonoBehaviour
         }
 
         // 2. 공격 수행 및 데미지 전달
-        Debug.Log("<color=blue>[적 공격]</color> 적이 플레이어를 타격했습니다!");
+        Debug.Log($"<color=blue>[적 공격]</color> {gameObject.name}이(가) 플레이어를 타격합니다!");
+
+        // target은 BattleManager에서 넘겨준 플레이어의 Transform입니다.
         BattleCharacter player = target.GetComponent<BattleCharacter>();
         if (player != null)
         {
-            player.TakeDamage(15);
+            player.TakeDamage(15); // 적의 공격력만큼 데미지 전달
         }
         yield return new WaitForSeconds(0.3f);
 
