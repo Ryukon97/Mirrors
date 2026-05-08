@@ -12,6 +12,10 @@ public class DialogueTextView : TextView
         dialogueTextInstance.gameObject.SetActive(false);
         dialogueTextInstance.speakerTmpro.text = speakerName;
     }
+    public override void HideView()
+    {
+        dialogueTextInstance.gameObject.SetActive(false);
+    }
 
     public override void UpdateView(string text)
     {

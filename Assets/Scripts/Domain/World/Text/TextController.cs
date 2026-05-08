@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class TextController : MonoBehaviour
@@ -18,6 +19,7 @@ public class TextController : MonoBehaviour
     // ---------------- public ---------------- 
     public void ChangeText(string newText) => textModel.ChangeText(newText);
     public void RequestView() => textModel.RequestView();
+    public void HideView() => textView.HideView();
     public void SetAndPlayNode(TextNode textNode)
     {
         this.textNode = textNode;
@@ -25,8 +27,11 @@ public class TextController : MonoBehaviour
     }
     public void PlayCurrentNode()
     {
-        // Todo: When Node Ends?
-        if (textNode == null) return;
+        if (textNode == null)
+        {
+            EndNode();
+            return;
+        }
         textModel.ChangeText(textNode.text);
         textModel.RequestView();
     }
@@ -42,8 +47,11 @@ public class TextController : MonoBehaviour
         textNode = textNode.prevNode;
         PlayCurrentNode();
     }
-
     // ----------------  private ---------------- 
+    void EndNode()
+    {
+        HideView();
+    }
     private void HandleViewRequested(string text) => textView.UpdateView(text);
     private void OnDestroy()
     {

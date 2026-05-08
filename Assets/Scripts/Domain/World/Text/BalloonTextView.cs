@@ -12,6 +12,13 @@ public class BalloonTextView : TextView
     {
 
     }
+    public override void HideView()
+    {
+        if (balloonInstance != null && balloonInstance.gameObject.activeSelf)
+        {
+            balloonInstance.gameObject.SetActive(false);
+        }
+    }
     private void Update()
     {
         if(balloonInstance != null && balloonInstance.gameObject.activeSelf && Time.time - viewRequestedTime > duration)
