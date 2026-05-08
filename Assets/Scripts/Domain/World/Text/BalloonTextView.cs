@@ -31,7 +31,6 @@ public class BalloonTextView : TextView
         if (balloonInstance == null)
         {
             balloonInstance = TextInstancePool.Instance.GetBalloonTextInstance();
-            balloonInstance.target = gameObject.transform;
             balloonInstance.transform.position = gameObject.transform.position + offset;
             balloonInstance.gameObject.SetActive(false);
         }
