@@ -6,7 +6,11 @@ public class BalloonTextInstance : MonoBehaviour
 {
     public TextMeshProUGUI tmpro;
     public bool applyTargetRotation;
-    [NonSerialized] public Transform target;
+    Transform target;
+    private void Awake()
+    {
+        target = Camera.main.transform;
+    }
     private void Update()
     {
         if (target == null) return;
