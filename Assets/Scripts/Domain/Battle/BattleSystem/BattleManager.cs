@@ -225,31 +225,13 @@ public class BattleManager : MonoBehaviour
 
         if (actingEnemy != null && actingEnemy.CurrentHp > 0)
         {
-            // 1. 적이 이동하는 연출까지는 그대로 둠
-            // (적의 AttackSequence 내부에 플레이어 타격 직전 멈추는 구간이 있다고 가정)
-
-            bool isEvaded = false;
-            bool qteFinished = false;
-
-            // 2. QTE 시작
-            qteManager.StartQTE((result) => {
-                isEvaded = result;
-                qteFinished = true;
-            });
-
-            // QTE가 끝날 때까지 대기
-            yield return new WaitUntil(() => qteFinished);
-
-            yield return StartCoroutine(actingEnemy.AttackSequence(player.transform, isEvaded));
-        
+            // 적에게 QTE 시작 함수를 인자로 넘겨줍니다.
+            yield return StartCoroutine(actingEnemy.AttackSequence(player.transform, qteManager.StartQTE));
         }
 
-        // 플레이어 사망 체크
         if (player.CurrentHp <= 0)
         {
             CurrentState = EBattleState.Lost;
-            Debug.Log("<color=black>전투 패배...</color>");
-            // 여기에 게임 오버 팝업 띄우기 등의 로직 추가
         }
         else
         {

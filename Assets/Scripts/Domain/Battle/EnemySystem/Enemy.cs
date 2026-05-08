@@ -1,5 +1,6 @@
-using UnityEngine;
+using System;
 using System.Collections;
+using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
@@ -37,7 +38,7 @@ public class Enemy : MonoBehaviour
     // Enemy.cs
 
     // BattleManager에서 QTE 결과(isEvaded)를 받아서 실행하도록 매개변수 추가
-    public IEnumerator AttackSequence(Transform target, bool isEvaded)
+    public IEnumerator AttackSequence(Transform target, Action<Action<bool>> requestQTE)
     {
         // 1. 타겟(플레이어) 방향으로 이동
         Vector3 targetPos = target.position + (transform.position - target.position).normalized * ATTACK_DISTANCE;
@@ -48,34 +49,45 @@ public class Enemy : MonoBehaviour
             yield return null;
         }
 
-        // 2. 공격 수행 및 데미지 전달 판정
+        // [추가] 2. 공격 직전 슬로우 모션 및 QTE 발생
+        Time.timeScale = 0.2f; // 시간을 5배 느리게 설정
+        Time.fixedDeltaTime = 0.02f * Time.timeScale; // 물리 연산 주기도 함께 조절 (부드러운 연출용)
+
+        bool isEvaded = false;
+        bool qteFinished = false;
+
+        // 매니저를 통해 QTE 시작 (BattleManager에서 이 로직을 넘겨줌)
+        requestQTE((result) => {
+            isEvaded = result;
+            qteFinished = true;
+        });
+
+        // QTE가 끝날 때까지 대기 (실시간 시간 기준으로 대기해야 함)
+        yield return new WaitUntil(() => qteFinished);
+
+        // 3. 시간 정상화
+        Time.timeScale = 1.0f;
+        Time.fixedDeltaTime = 0.02f;
+
+        // 4. 대미지 판정
         if (isEvaded)
         {
-            // QTE 성공 시: 대미지 없음
-            Debug.Log($"<color=cyan>[회피 성공]</color> {gameObject.name}의 공격을 피했습니다!");
+            Debug.Log("<color=cyan>회피 성공!</color>");
         }
         else
         {
-            // QTE 실패 시: 정상 대미지 전달
-            Debug.Log($"<color=blue>[적 공격]</color> {gameObject.name}이(가) 플레이어를 타격합니다!");
-
             BattleCharacter player = target.GetComponent<BattleCharacter>();
-            if (player != null)
-            {
-                player.TakeDamage(15); // 적의 공격력만큼 데미지 전달
-            }
+            if (player != null) player.TakeDamage(15);
         }
 
-        // 타격 후 잠시 대기 (공격 연출 시간)
         yield return new WaitForSeconds(0.3f);
 
-        // 3. 원래 위치로 복귀
+        // 5. 원래 위치로 복귀
         while (Vector3.Distance(transform.position, originalPosition) > 0.1f)
         {
             transform.position = Vector3.MoveTowards(transform.position, originalPosition, MOVE_SPEED * Time.deltaTime);
             yield return null;
         }
-
         transform.position = originalPosition;
     }
 

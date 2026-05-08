@@ -10,18 +10,22 @@ public class QTEManager : MonoBehaviour
     public RectTransform successZone;
 
     private bool isActive = false;
-    private float rotationSpeed = 30f;
+    private float rotationSpeed = 180f;
     private Action<bool> onQTEFinished;
+
+    private void Start()
+    {
+        qtePanel.SetActive(false);
+    }
 
     void Update()
     {
-        // 1. isActive가 false면 아래 로직을 아예 타지 않으므로 바늘도 멈춥니다.
         if (!isActive) return;
 
-        // 바늘 회전
-        needle.Rotate(Vector3.back * rotationSpeed * Time.deltaTime);
+        // [수정] unscaledDeltaTime을 사용하여 전체 슬로우 모션과 관계없이 바늘은 일정한 속도로 회전함
+        needle.Rotate(Vector3.back * rotationSpeed * Time.unscaledDeltaTime);
 
-        // 2. New Input System 방식으로 스페이스바 입력 체크
+        // New Input System 사용 시
         if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
             CheckSuccess();
