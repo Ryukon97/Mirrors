@@ -7,169 +7,281 @@ using System.Linq;
 public class BattleManager : MonoBehaviour
 {
     // --------------- 변수 영역 --------------
+    [Header("Characters")]
     public BattleCharacter player;
-    public Enemy enemy;
+    public List<Enemy> enemies; // 인스펙터에서 적 3명을 넣어주세요.
 
     [Header("UI References")]
-    public Transform timelineContainer; // Vertical Layout Group 적용 패널
-
-    [Header("Icon Prefabs")]
+    public Transform timelineContainer; // Vertical Layout Group 패널
     public GameObject playerIconPrefab;
-    public GameObject enemyIconPrefab;
+    public GameObject enemyIconPrefab;    
 
-    // 멤버 변수는 lowerCamelCase
+    [Header("Ultimate System")]
+    public Button ultimateButton;      // 필살기 버튼
+    public Image ultimateGaugeImage;   // Filled 타입 게이지 이미지
+    private float currentGauge = 0f;
+    private const float MAX_GAUGE = 100f;
+    private const float GAUGE_PER_ATTACK = 25f;
+
+    [Header("QTE System")]
+    public QTEManager qteManager;
+
     private List<BattleUnitOrder> turnTimeline = new List<BattleUnitOrder>();
     private List<GameObject> activeTimelineIcons = new List<GameObject>();
 
     public EBattleState CurrentState { get; private set; }
+    private Enemy currentTarget;
 
     // --------------- Unity Life Cycle --------------
     private void Start()
     {
         CurrentState = EBattleState.Start;
-        // 게임 시작 시에만 타임라인 초기 데이터를 생성합니다.
-        InitializeTimeline();
+        UpdateUltimateUI();
+        InitializeTimeline(); // [P, P, E1, E2, E3] 구조 생성
         DetermineNextTurn();
     }
 
     // --------------- public APIs --------------
 
-    public void OnAttackButtonClick()
+    public void OnAttackButtonClick() // 일반 공격 버튼 연결
     {
-        if (CurrentState != EBattleState.PlayerTurn)
-        {
-            return;
-        }
-
+        if (CurrentState != EBattleState.PlayerTurn) return;
         StartCoroutine(PlayerTurnSequence());
     }
 
-    // [이름 변경 및 로직 수정] 초기 데이터만 비율대로 생성합니다.
-    public void InitializeTimeline()
+    public void OnUltimateButtonClick() // 필살기 버튼 연결
+    {
+        if (CurrentState != EBattleState.PlayerTurn || currentGauge < MAX_GAUGE) return;
+        StartCoroutine(UltimateSequence());
+    }
+
+    // --------------- private Logic ------------------
+
+    // 1. 타임라인 초기 데이터 구성 (P:P:E 비율)
+    private void InitializeTimeline()
     {
         turnTimeline.Clear();
 
-        // 플레이어 2턴 : 적 1턴 비율의 최소 데이터만 넣습니다.
+        // 플레이어 2턴
         for (int i = 0; i < 2; i++)
         {
-            turnTimeline.Add(new BattleUnitOrder { unitType = ECharacterType.Player, unitName = "Player", actionValue = 100f });
+            turnTimeline.Add(new BattleUnitOrder { unitType = ECharacterType.Player, unitName = "Player" });
         }
-        turnTimeline.Add(new BattleUnitOrder { unitType = ECharacterType.Enemy, unitName = "Enemy", actionValue = 120f });
 
-        // 초기 정렬 (AV 순서대로)
-        turnTimeline = turnTimeline.OrderBy(unit => unit.actionValue).ToList();
-
+        // 적 3명 각각 추가 (각자의 정보를 담음)
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            turnTimeline.Add(new BattleUnitOrder
+            {
+                unitType = ECharacterType.Enemy,
+                unitName = "Enemy_" + i,
+                enemyReference = enemies[i] // 각 적 오브젝트를 매칭
+            });
+        }
         UpdateTimelineUI();
+        AutoTargetNext();
     }
 
-    // --------------- private ------------------
-
+    // 2. 다음 턴 결정 및 자동 실행
     private void DetermineNextTurn()
     {
         if (turnTimeline.Count == 0) return;
 
-        // 타임라인의 맨 앞(0번째) 유닛이 다음 턴입니다.
         BattleUnitOrder nextUnit = turnTimeline[0];
 
         if (nextUnit.unitType == ECharacterType.Player)
         {
             CurrentState = EBattleState.PlayerTurn;
-            Debug.Log("<color=green>[Turn]</color> 플레이어의 턴입니다.");
+            Debug.Log("<color=green>[Turn]</color> 플레이어 차례입니다.");
         }
         else
         {
             CurrentState = EBattleState.EnemyTurn;
-            Debug.Log("<color=red>[Turn]</color> 적의 턴입니다. 자동으로 공격합니다.");
             StartCoroutine(EnemyTurnSequence());
         }
     }
 
-    // [수정] 아이콘 생성 시, 데이터가 8개 미만이라면 순환시켜서 강제로 채웁니다.
+    // 3. 타임라인 UI 업데이트 (8개 순환 표시)
     private void UpdateTimelineUI()
     {
-        foreach (GameObject icon in activeTimelineIcons)
-        {
-            Destroy(icon);
-        }
+        foreach (GameObject icon in activeTimelineIcons) Destroy(icon);
         activeTimelineIcons.Clear();
 
         if (turnTimeline.Count == 0) return;
 
-        // UI에 표시될 리스트 (8개 이상 유지하기 위해 가상으로 생성)
         List<BattleUnitOrder> displayList = new List<BattleUnitOrder>();
-
         int currentIndex = 0;
+
         while (displayList.Count < 8)
         {
-            // 원본 리스트를 순환하며 8개를 채웁니다.
-            int indexToUse = currentIndex % turnTimeline.Count;
-            displayList.Add(turnTimeline[indexToUse]);
+            displayList.Add(turnTimeline[currentIndex % turnTimeline.Count]);
             currentIndex++;
         }
 
-        // 채워진 displayList로 UI를 생성합니다.
         foreach (BattleUnitOrder unit in displayList)
         {
-            GameObject prefabToSpawn = unit.unitType == ECharacterType.Player ? playerIconPrefab : enemyIconPrefab;
-
-            if (prefabToSpawn != null)
+            GameObject prefab = unit.unitType == ECharacterType.Player ? playerIconPrefab : enemyIconPrefab;
+            if (prefab != null)
             {
-                GameObject iconObj = Instantiate(prefabToSpawn, timelineContainer);
+                GameObject iconObj = Instantiate(prefab, timelineContainer);
                 activeTimelineIcons.Add(iconObj);
             }
         }
     }
 
+    // 4. 플레이어 일반 공격
     private IEnumerator PlayerTurnSequence()
     {
         CurrentState = EBattleState.Busy;
 
-        yield return StartCoroutine(player.AttackSequence());
-
-        if (enemy.CurrentHp > 0)
+        // 타겟이 없거나 죽었다면 자동 타겟팅
+        if (currentTarget == null || currentTarget.CurrentHp <= 0)
         {
-            // [중요] 행동 완료 후 데이터를 맨 뒤로 보냅니다.
+            AutoTargetNext();
+        }
+
+        if (currentTarget != null)
+        {
+            // [수정] 타겟 정보를 인자로 넘겨줍니다. 
+            // 이제 BattleCharacter 내부에서 직접 TakeDamage를 호출하므로 여기서 중복으로 호출하지 마세요.
+            yield return StartCoroutine(player.AttackSequence(currentTarget));
+        }
+
+        currentGauge = Mathf.Min(currentGauge + GAUGE_PER_ATTACK, MAX_GAUGE);
+        UpdateUltimateUI();
+
+        CycleFinishedUnit();
+        yield return new WaitForSeconds(0.5f);
+        DetermineNextTurn();
+    }
+
+
+    public void RemoveEnemy(Enemy deadEnemy)
+    {
+        if (enemies.Contains(deadEnemy)) enemies.Remove(deadEnemy);
+        turnTimeline.RemoveAll(unit => unit.enemyReference == deadEnemy);
+
+        // 죽은 적이 현재 타겟이었다면 타겟 초기화 및 자동 변경
+        if (currentTarget == deadEnemy)
+        {
+            currentTarget = null;
+            AutoTargetNext();
+        }
+
+        UpdateTimelineUI();
+
+        if (enemies.Count == 0)
+        {
+            CurrentState = EBattleState.Won;
+            Debug.Log("승리!");
+        }
+    }
+
+    // [확인] 필살기: 모든 적 전체 공격 로직
+    // 5. 필살기 (모든 적 공격)
+    private IEnumerator UltimateSequence()
+    {
+        CurrentState = EBattleState.Busy;
+        currentGauge = 0f;
+        UpdateUltimateUI();
+
+        Debug.Log("<color=yellow>!!! 필살기 발동: 전체 공격 !!!</color>");
+
+        // 공격 시점의 적 리스트를 복사하여 사용
+        List<Enemy> targets = new List<Enemy>(enemies);
+
+        foreach (var target in targets)
+        {
+            // 타겟이 아직 파괴되지 않았고 살아있는지 확인
+            if (target != null && target.CurrentHp > 0)
+            {
+                // [수정된 부분] 타겟(target)을 인자로 전달합니다.
+                yield return StartCoroutine(player.AttackSequence(target));
+
+                // 주의: BattleCharacter.AttackSequence 내부에서 TakeDamage를 호출한다면 
+                // 여기서 중복으로 호출하지 않도록 주의하세요.
+            }
+        }
+
+        if (enemies.Count > 0)
+        {
             CycleFinishedUnit();
-            yield return new WaitForSeconds(1.0f);
+            yield return new WaitForSeconds(0.5f);
             DetermineNextTurn();
         }
         else
         {
             CurrentState = EBattleState.Won;
-            Debug.Log("전투 승리!");
         }
     }
 
+    // 6. 적 자동 공격
     private IEnumerator EnemyTurnSequence()
     {
         CurrentState = EBattleState.Busy;
 
-        yield return StartCoroutine(enemy.AttackSequence(player.transform));
+        BattleUnitOrder currentUnit = turnTimeline[0];
+        Enemy actingEnemy = currentUnit.enemyReference;
 
-        if (player.CurrentHp > 0)
+        if (actingEnemy != null && actingEnemy.CurrentHp > 0)
         {
-            // [중요] 행동 완료 후 데이터를 맨 뒤로 보냅니다.
-            CycleFinishedUnit();
-            yield return new WaitForSeconds(1.0f);
-            DetermineNextTurn();
+            // 적에게 QTE 시작 함수를 인자로 넘겨줍니다.
+            yield return StartCoroutine(actingEnemy.AttackSequence(player.transform, qteManager.StartQTE));
+        }
+
+        if (player.CurrentHp <= 0)
+        {
+            CurrentState = EBattleState.Lost;
         }
         else
         {
-            CurrentState = EBattleState.Lost;
-            Debug.Log("전투 패배...");
+            CycleFinishedUnit();
+            yield return new WaitForSeconds(0.5f);
+            DetermineNextTurn();
         }
     }
 
-    // [추가] 행동을 마친 맨 앞 데이터를 맨 뒤로 보내 턴을 순환시킵니다.
+    // 7. 데이터 순환 로직
     private void CycleFinishedUnit()
     {
         if (turnTimeline.Count > 0)
         {
             BattleUnitOrder finishedUnit = turnTimeline[0];
             turnTimeline.RemoveAt(0);
-            turnTimeline.Add(finishedUnit); // 맨 뒤로 이동
-
+            turnTimeline.Add(finishedUnit);
             UpdateTimelineUI();
+        }
+    }
+
+    // 8. 게이지 UI 동기화
+    private void UpdateUltimateUI()
+    {
+        if (ultimateGaugeImage != null)
+            ultimateGaugeImage.fillAmount = currentGauge / MAX_GAUGE;
+
+        if (ultimateButton != null)
+            ultimateButton.interactable = (currentGauge >= MAX_GAUGE);
+    }
+
+    public void SetTarget(Enemy target)
+    {
+        if (target == null || target.CurrentHp <= 0) return;
+
+        // 기존 타겟 표시 해제
+        if (currentTarget != null) currentTarget.SetSelection(false);
+
+        currentTarget = target;
+        currentTarget.SetSelection(true);
+        Debug.Log($"<color=yellow>[타겟 변경]</color> {target.gameObject.name}을(를) 조준합니다.");
+    }
+
+    // 자동 타겟팅 (다음 살아있는 적 찾기)
+    private void AutoTargetNext()
+    {
+        currentTarget = enemies.Find(e => e != null && e.CurrentHp > 0);
+        if (currentTarget != null)
+        {
+            currentTarget.SetSelection(true);
         }
     }
 }
