@@ -14,7 +14,7 @@ public class BattleManager : MonoBehaviour
     [Header("UI References")]
     public Transform timelineContainer; // Vertical Layout Group 패널
     public GameObject playerIconPrefab;
-    public GameObject enemyIconPrefab;
+    public GameObject enemyIconPrefab;    
 
     [Header("Ultimate System")]
     public Button ultimateButton;      // 필살기 버튼
@@ -22,6 +22,9 @@ public class BattleManager : MonoBehaviour
     private float currentGauge = 0f;
     private const float MAX_GAUGE = 100f;
     private const float GAUGE_PER_ATTACK = 25f;
+
+    [Header("QTE System")]
+    public QTEManager qteManager;
 
     private List<BattleUnitOrder> turnTimeline = new List<BattleUnitOrder>();
     private List<GameObject> activeTimelineIcons = new List<GameObject>();
@@ -222,7 +225,23 @@ public class BattleManager : MonoBehaviour
 
         if (actingEnemy != null && actingEnemy.CurrentHp > 0)
         {
-            yield return StartCoroutine(actingEnemy.AttackSequence(player.transform));
+            // 1. 적이 이동하는 연출까지는 그대로 둠
+            // (적의 AttackSequence 내부에 플레이어 타격 직전 멈추는 구간이 있다고 가정)
+
+            bool isEvaded = false;
+            bool qteFinished = false;
+
+            // 2. QTE 시작
+            qteManager.StartQTE((result) => {
+                isEvaded = result;
+                qteFinished = true;
+            });
+
+            // QTE가 끝날 때까지 대기
+            yield return new WaitUntil(() => qteFinished);
+
+            yield return StartCoroutine(actingEnemy.AttackSequence(player.transform, isEvaded));
+        
         }
 
         // 플레이어 사망 체크
