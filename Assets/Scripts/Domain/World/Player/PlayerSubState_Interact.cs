@@ -33,7 +33,7 @@ public class PlayerSubState_Interact : PlayerSubState_Base
 	}
 	private void Interact(PlayerStateMachine machine, Player player)
 	{
-		if (interactHovering && interactAction.WasPressedThisFrame())
+		if (interactHovering && interactAction.WasPerformedThisFrame())
 		{
 			if (IsInteractReady(interactableLayerMask, player))
 			{
