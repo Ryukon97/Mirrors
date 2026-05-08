@@ -2,11 +2,11 @@ using System;
 
 public class TextModel
 {
-    public event Action<string> OnViewRequested;
-    public string Text { get; private set; }
+    public event Action<string[]> OnViewRequested;
+    public string[] Texts { get; private set; }
     public void RequestView()
     {
-        OnViewRequested?.Invoke(Text);
+        OnViewRequested?.Invoke(Texts);
     }
-    public void ChangeText(string newText) { Text = newText; }
+    public void ChangeText(string[] texts) { Texts = texts; }
 }

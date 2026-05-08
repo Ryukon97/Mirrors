@@ -11,6 +11,9 @@ public class TextInstancePool : MonoBehaviour
     [Header("Dialogue Text")]
     [SerializeField] DialogueTextInstance dialogueTextInstance;
 
+    [Header("Selection Text")]
+    [SerializeField] SelectionTextInstance selectionTextInstance;
+
     [Header("Balloon Text")]
     [SerializeField] GameObject balloonTextPrefab;
     BalloonTextInstance[] balloonTextInstances = new BalloonTextInstance[MAX_BALLOON_CNT];
@@ -31,6 +34,7 @@ public class TextInstancePool : MonoBehaviour
             balloonTextInstances[i].gameObject.SetActive(false);
         }
     }
+    public SelectionTextInstance GetSelectionTextInstance() => selectionTextInstance;
     public DialogueTextInstance GetDialogueTextInstance() => dialogueTextInstance;
     public BalloonTextInstance GetBalloonTextInstance()
     {
