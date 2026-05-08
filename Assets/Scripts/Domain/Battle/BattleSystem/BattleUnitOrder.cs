@@ -10,8 +10,8 @@ public enum ECharacterType
 // PascalCase 적용
 public struct BattleUnitOrder
 {
-    // 멤버 변수는 lowerCamelCase 적용
     public ECharacterType unitType;
     public string unitName;
-    public float actionValue; // 턴이 돌아오기까지 남은 값
+    public float actionValue;
+    public Enemy enemyReference; // [추가] 실제 어떤 적 오브젝트인지 저장
 }
