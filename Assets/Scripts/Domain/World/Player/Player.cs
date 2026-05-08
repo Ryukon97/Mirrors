@@ -9,4 +9,16 @@ public class Player : MonoBehaviour
 
     public float mouseSenceX;
     public float mouseSenceY;
+
+    public PlayerStateMachine FSM { get; private set; }
+
+    private void Awake()
+    {
+
+        FSM = new PlayerStateMachine(this);
+    }
+    private void Update()
+    {
+        FSM.UpdateState();
+    }
 }

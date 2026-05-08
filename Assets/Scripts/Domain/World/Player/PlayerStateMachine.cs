@@ -12,9 +12,10 @@ public class PlayerStateMachine
 		var move = new PlayerSubState_Move(speed: 10f, rotSpeed: 10f);
 		var look = new PlayerSubState_Look();
 		var interact = new PlayerSubState_Interact(LayerMask.GetMask("Interactable"));
+        var playNextNode = new PlayerSubState_PlayNextNode();
 
-		normalState = new PlayerState_Normal(this, player, new PlayerSubState_Base[]{ move, look, interact});
-        interactingState = new PlayerState_Watch(this, player, new PlayerSubState_Base[] { });
+        normalState = new PlayerState_Normal(this, player, new PlayerSubState_Base[]{ move, look, interact});
+        interactingState = new PlayerState_Watch(this, player, new PlayerSubState_Base[] { playNextNode });
 
 		curState = normalState;
 		curState.OnEnter();

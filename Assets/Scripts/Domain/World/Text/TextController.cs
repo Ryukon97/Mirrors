@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class TextController : MonoBehaviour
 {
-
     [SerializeField] private TextView textView;
     private TextNode textNode;
     private TextModel textModel;
@@ -25,21 +24,25 @@ public class TextController : MonoBehaviour
         this.textNode = textNode;
         PlayCurrentNode();
     }
-    public void PlayCurrentNode()
+    public bool PlayCurrentNode()
     {
         if (textNode == null)
         {
             EndNode();
-            return;
+            return false;
         }
         textModel.ChangeText(textNode.text);
         textModel.RequestView();
+        return true;
     }
-    public void PlayNextNode()
+    public bool PlayNextNode()
     {
-        if (textNode == null) return;
+        if (textNode == null)
+        {
+            return false;
+        }
         textNode = textNode.nextNode;
-        PlayCurrentNode();
+        return PlayCurrentNode();
     }
     public void PlayPrevNode()
     {

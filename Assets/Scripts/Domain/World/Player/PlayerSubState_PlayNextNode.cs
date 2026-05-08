@@ -5,9 +5,10 @@ public class PlayerSubState_PlayNextNode : PlayerSubState_Base
 {
     InputAction interactAction = PlayerInputReciever.Instance.InteractAction;
     TextController textController;
-
+    PlayerStateMachine fsm;
     public override void OnEnter(PlayerState_Base baseState, Player player)
     {
+        if (fsm == null) fsm = player.FSM;
         interactAction.performed += OnInteracted;
     }
     public override void OnExit(PlayerState_Base baseState, Player player)
@@ -17,12 +18,20 @@ public class PlayerSubState_PlayNextNode : PlayerSubState_Base
 
     public override void OnUpdate(PlayerState_Base baseState, Player player)
     {
-        throw new System.NotImplementedException();
+
     }
 
     private void OnInteracted(InputAction.CallbackContext obj)
     {
-        textController.PlayNextNode();
+        bool played = textController.PlayNextNode();
+        if(played == false)
+        {
+            fsm.ChangeState(fsm.normalState);
+        }
+    }
+    public void SetTextController(TextController textController)
+    {
+        this.textController = textController;
     }
 
 }

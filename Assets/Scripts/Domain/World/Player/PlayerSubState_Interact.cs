@@ -18,11 +18,13 @@ public class PlayerSubState_Interact : PlayerSubState_Base
 	public override void OnEnter(PlayerState_Base baseState, Player player)
 	{
 		interactHovering = false;
+        Debug.Log("Interact Out");
     }
 
     public override void OnExit(PlayerState_Base baseState, Player player)
     {
         // turn off interact hover ui
+        Debug.Log("Interact Out");
     }
 
     public override void OnUpdate(PlayerState_Base baseState, Player player)
@@ -45,6 +47,7 @@ public class PlayerSubState_Interact : PlayerSubState_Base
 			{
 				if (interactHovering == false)
 				{
+					Debug.Log("Interact Hovered");
 					// turn on interact hover ui
 				}
 				interactHovering = true;
@@ -53,8 +56,9 @@ public class PlayerSubState_Interact : PlayerSubState_Base
 			{
 				if (interactHovering == true)
                 {
+                    Debug.Log("Interact Out");
                     // turn off interact hover ui
-				}
+                }
 				interactHovering = false;
 			}
 		}
