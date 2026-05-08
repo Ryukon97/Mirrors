@@ -18,16 +18,18 @@ public class TextNodeChainEditor : EditorWindow
     private class NodeEntry
     {
         public string fileName = "TextNode";
-        public bool isSelection = false;
+        public ETextViewType viewType = ETextViewType.Dialogue;
         public TextNode asset = null;
 
-        // isSelection = false : singles[0]만 사용 (text + nextNode)
-        // isSelection = true  : singles 전체 사용
+        // viewType == Selection : singles 전체 사용
+        // 그 외                 : singles[0]만 사용
         public List<SingleEntry> singles = new List<SingleEntry> { new SingleEntry() };
 
         // prevNode override
         public bool usePrevOverride = false;
         public TextNode overridePrev = null;
+
+        public bool IsSelection => viewType == ETextViewType.Selection;
     }
 
     // SingleTextNode 하나에 대응
@@ -106,11 +108,11 @@ public class TextNodeChainEditor : EditorWindow
         var node = _nodes[i];
         bool isHead = (i == 0);
 
-        var bgColor = isHead
-            ? new Color(0.3f, 0.55f, 0.3f, 0.28f)
-            : node.isSelection
+        var bgColor = node.viewType == ETextViewType.Selection
                 ? new Color(0.55f, 0.4f, 0.1f, 0.28f)
-                : new Color(0.25f, 0.35f, 0.5f, 0.18f);
+                : node.viewType == ETextViewType.Balloon
+                    ? new Color(0.35f, 0.25f, 0.55f, 0.28f)
+                    : new Color(0.25f, 0.35f, 0.5f, 0.18f);
 
         var rect = EditorGUILayout.BeginVertical(GUILayout.MinHeight(20));
         EditorGUI.DrawRect(rect, bgColor);
@@ -124,14 +126,14 @@ public class TextNodeChainEditor : EditorWindow
         EditorGUILayout.LabelField("Name:", GUILayout.Width(40));
         node.fileName = EditorGUILayout.TextField(node.fileName, GUILayout.Width(130));
 
-        // isSelection 토글
-        bool newIsSel = EditorGUILayout.ToggleLeft("Selection", node.isSelection, GUILayout.Width(76));
-        if (newIsSel != node.isSelection)
+        // viewType Enum (Selection이면 singles 복수 허용, 단일→복수 전환 시 데이터 유지)
+        var newViewType = (ETextViewType)EditorGUILayout.EnumPopup(node.viewType, GUILayout.Width(80));
+        if (newViewType != node.viewType)
         {
-            node.isSelection = newIsSel;
-            // 단일→선택지: 이미 singles[0]이 있으므로 그대로
-            // 선택지→단일: singles를 1개로 줄임
-            if (!node.isSelection && node.singles.Count > 1)
+            bool wasSelection = node.IsSelection;
+            node.viewType = newViewType;
+            // Selection → 단일 전환 시 singles 1개로 줄임
+            if (wasSelection && !node.IsSelection && node.singles.Count > 1)
                 node.singles.RemoveRange(1, node.singles.Count - 1);
         }
 
@@ -172,7 +174,7 @@ public class TextNodeChainEditor : EditorWindow
         DrawPrevRow(node, i);
 
         // ── SingleTextNode 행들 ───────────────────────────────────────────────
-        if (node.isSelection)
+        if (node.IsSelection)
         {
             // 선택지 모드: 여러 SingleEntry
             for (int s = 0; s < node.singles.Count; s++)
@@ -284,7 +286,16 @@ public class TextNodeChainEditor : EditorWindow
     {
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("+ Add Node", GUILayout.Height(28)))
-            _nodes.Add(new NodeEntry { fileName = $"TextNode_{_nodes.Count}" });
+        {
+            var prevViewType = _nodes.Count > 0
+                ? _nodes[_nodes.Count - 1].viewType
+                : ETextViewType.Dialogue;
+            _nodes.Add(new NodeEntry
+            {
+                fileName = $"TextNode_{_nodes.Count}",
+                viewType = prevViewType,
+            });
+        }
         EditorGUILayout.EndHorizontal();
     }
 
@@ -342,7 +353,8 @@ public class TextNodeChainEditor : EditorWindow
             var entry = _nodes[i];
             var so = assets[i];
 
-            so.isSelection = entry.isSelection;
+            so.viewType = entry.viewType;
+            so.isSelection = entry.IsSelection;
 
             // prevNode
             so.prevNode = entry.usePrevOverride
@@ -424,7 +436,7 @@ public class TextNodeChainEditor : EditorWindow
             var entry = new NodeEntry
             {
                 fileName = current.name,
-                isSelection = current.isSelection,
+                viewType = current.viewType,
                 asset = current,
                 singles = new List<SingleEntry>(),
             };
@@ -478,6 +490,6 @@ public class TextNodeChainEditor : EditorWindow
 
         _nodes.Clear();
         _loadedHead = null;
-        _nodes.Add(new NodeEntry { fileName = "TextNode_Head" });
+        _nodes.Add(new NodeEntry { fileName = "TextNode_Head", viewType = ETextViewType.Dialogue });
     }
 }
