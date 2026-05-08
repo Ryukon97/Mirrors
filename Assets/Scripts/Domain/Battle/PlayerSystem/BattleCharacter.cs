@@ -30,37 +30,36 @@ public class BattleCharacter : MonoBehaviour
     }
 
     // --------------- public APIs --------------
-    public IEnumerator AttackSequence()
+    public IEnumerator AttackSequence(Enemy target) // Enemy 인자를 받도록 수정
     {
-        isAttacking = true;
+        if (target == null) yield break;
+
+        Vector3 originalPos = transform.position;
+        // 타겟의 위치로 이동 (공격 거리 유지)
+        Vector3 targetPos = target.transform.position + (transform.position - target.transform.position).normalized * 1.5f;
 
         // 1. 이동
-        Vector3 targetPos = enemyTransform.position + (transform.position - enemyTransform.position).normalized * ATTACK_DISTANCE;
         while (Vector3.Distance(transform.position, targetPos) > 0.1f)
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, MOVE_SPEED * Time.deltaTime);
+            // 이동 도중 타겟이 파괴되었는지 체크 (에러 방지)
+            if (target == null) { transform.position = originalPos; yield break; }
+
+            transform.position = Vector3.MoveTowards(transform.position, targetPos, 15f * Time.deltaTime);
             yield return null;
         }
 
-        // 2. 공격 수행
-        Debug.Log("<color=red>[공격]</color> 적에게 피해를 입혔습니다!");
-        Enemy targetEnemy = enemyTransform.GetComponent<Enemy>();
-        if (targetEnemy != null)
-        {
-            targetEnemy.TakeDamage(20);
-        }
-
+        // 2. 타격 (중요: 여기서 target에게만 대미지를 줌)
+        Debug.Log($"{target.name}을(를) 공격합니다!");
+        target.TakeDamage(25);
         yield return new WaitForSeconds(0.2f);
 
         // 3. 복귀
-        while (Vector3.Distance(transform.position, originalPosition) > 0.1f)
+        while (Vector3.Distance(transform.position, originalPos) > 0.1f)
         {
-            transform.position = Vector3.MoveTowards(transform.position, originalPosition, MOVE_SPEED * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, originalPos, 15f * Time.deltaTime);
             yield return null;
         }
-
-        transform.position = originalPosition;
-        isAttacking = false;
+        transform.position = originalPos;
     }
 
     public void TakeDamage(int damage)

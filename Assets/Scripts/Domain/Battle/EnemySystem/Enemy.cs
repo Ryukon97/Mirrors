@@ -11,6 +11,7 @@ public class Enemy : MonoBehaviour
     private Vector3 originalPosition;
 
     public int CurrentHp => currentHp;
+    public GameObject selectionIndicator;
 
     // --------------- Unity Life Cycle --------------
     private void Start()
@@ -20,6 +21,19 @@ public class Enemy : MonoBehaviour
 
     // --------------- public APIs --------------
 
+     // 선택되었을 때 보여줄 이펙트나 이미지 (선택 사항)
+
+    private void OnMouseDown()
+    {
+        // 클릭 시 매니저에게 나를 타겟으로 설정하라고 알림
+        FindObjectOfType<BattleManager>().SetTarget(this);
+    }
+
+    public void SetSelection(bool isSelected)
+    {
+        if (selectionIndicator != null)
+            selectionIndicator.SetActive(isSelected);
+    }
     public IEnumerator AttackSequence(Transform target)
     {
         // 1. 타겟(플레이어) 방향으로 이동
@@ -52,6 +66,14 @@ public class Enemy : MonoBehaviour
     public void TakeDamage(int damage)
     {
         currentHp -= damage;
-        Debug.Log($"적 HP 감소: {currentHp}");
+        Debug.Log($"{gameObject.name} HP 감소: {currentHp}");
+
+        if (currentHp <= 0)
+        {
+            Debug.Log($"{gameObject.name} 사망!");
+            // BattleManager의 리스트에서도 제거하기 위해 아래 함수 호출
+            FindObjectOfType<BattleManager>().RemoveEnemy(this);
+            Destroy(gameObject);
+        }
     }
 }
