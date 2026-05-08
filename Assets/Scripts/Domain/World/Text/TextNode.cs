@@ -1,9 +1,19 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "TextNode", menuName = "World/TextNode")]
 public class TextNode : ScriptableObject
 {
     public TextNode prevNode;
+    public bool isSelection;
+    public List<SingleTextNode> node;
+}
+
+[Serializable]
+public class SingleTextNode
+{
     public string text;
     public TextNode nextNode;
 }
+

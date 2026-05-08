@@ -12,6 +12,13 @@ public class BalloonTextView : TextView
     {
 
     }
+    public override void HideView()
+    {
+        if (balloonInstance != null && balloonInstance.gameObject.activeSelf)
+        {
+            balloonInstance.gameObject.SetActive(false);
+        }
+    }
     private void Update()
     {
         if(balloonInstance != null && balloonInstance.gameObject.activeSelf && Time.time - viewRequestedTime > duration)
@@ -19,7 +26,7 @@ public class BalloonTextView : TextView
             balloonInstance.gameObject.SetActive(false);
         }
     }
-    public override void UpdateView(string text)
+    public override void UpdateView(string[] text)
     {
         if (balloonInstance == null)
         {
@@ -32,7 +39,7 @@ public class BalloonTextView : TextView
         if (balloonInstance.gameObject.activeSelf == false)
             balloonInstance.gameObject.SetActive(true);
 
-        balloonInstance.tmpro.text = text;
+        balloonInstance.tmpro.text = text[0];
         viewRequestedTime = Time.time;
     }
 }
