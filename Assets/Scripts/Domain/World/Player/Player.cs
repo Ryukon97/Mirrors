@@ -1,0 +1,12 @@
+using UnityEngine;
+
+public class Player : MonoBehaviour
+{
+    public Transform camTarget;
+    public Transform forwardCamTarget;
+    public Transform playerBody;
+    public CharacterController controller;
+
+    public float mouseSenceX;
+    public float mouseSenceY;
+}
