@@ -4,7 +4,6 @@ using UnityEngine;
 public class SelectionTextView : TextView
 {
     SelectionTextInstance selectionTextInstance;
-    public List<string> texts;
     public override void InitView()
     {
         selectionTextInstance = TextInstancePool.Instance.GetSelectionTextInstance();
@@ -21,6 +20,9 @@ public class SelectionTextView : TextView
         if (selectionTextInstance.gameObject.activeSelf == false)
             selectionTextInstance.gameObject.SetActive(true);
 
-        // set text[0..n] to selectionTextInstance.tmpros[0..n]
+        for(int i = 0; i < selectionTextInstance.tmpros.Count && i < text.Length; i++)
+        {
+            selectionTextInstance.tmpros[i].text = text[i];
+        }
     }
 }

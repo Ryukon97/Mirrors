@@ -6,7 +6,6 @@ public class PlayerSubState_PlayNextNode : PlayerSubState_Base
     InputAction interactAction = PlayerInputReciever.Instance.InteractAction;
     PlayerStateMachine fsm;
 
-    public static TextController TextController { get; set; }
     public override void OnEnter(PlayerState_Base baseState, Player player)
     {
         if (fsm == null) fsm = player.FSM;
@@ -24,9 +23,9 @@ public class PlayerSubState_PlayNextNode : PlayerSubState_Base
 
     private void OnInteracted(InputAction.CallbackContext obj)
     {
-        if (TextController.IsSelection) return;
+        if (TextControllerManager.controller.IsSelection) return;
 
-        bool played = TextController.PlayNextNode();
+        bool played = TextControllerManager.controller.PlayNextNode();
         Debug.Log("Interacted");
         if (played == false)
         {

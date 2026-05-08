@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-392271508540554854
+--- !u!114 &-3772581557770414636
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -10,13 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60835b93f91862449979db49d3841727, type: 3}
-  m_Name: TextNode_2
+  m_Name: TextNode_1
   m_EditorClassIdentifier: Assembly-CSharp::TextNode
-  prevNode: {fileID: 5486380112802578685}
+  viewType: 1
+  prevNode: {fileID: 11400000}
   isSelection: 0
   node:
-  - text: '!!!'
-    nextNode: {fileID: 0}
+  - text: World
+    nextNode: {fileID: 3790663606694399081}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29,14 +30,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60835b93f91862449979db49d3841727, type: 3}
   m_Name: TextNode_0
   m_EditorClassIdentifier: Assembly-CSharp::TextNode
+  viewType: 2
   prevNode: {fileID: 0}
   isSelection: 1
   node:
   - text: Hello
-    nextNode: {fileID: 5486380112802578685}
+    nextNode: {fileID: -3772581557770414636}
   - text: Hi
-    nextNode: {fileID: 5486380112802578685}
---- !u!114 &5486380112802578685
+    nextNode: {fileID: -3772581557770414636}
+  - text: Bonjure
+    nextNode: {fileID: 3790663606694399081}
+--- !u!114 &3790663606694399081
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -46,10 +50,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60835b93f91862449979db49d3841727, type: 3}
-  m_Name: TextNode_1
+  m_Name: TextNode_2
   m_EditorClassIdentifier: Assembly-CSharp::TextNode
-  prevNode: {fileID: 11400000}
+  viewType: 0
+  prevNode: {fileID: -3772581557770414636}
   isSelection: 0
   node:
-  - text: World
-    nextNode: {fileID: -392271508540554854}
+  - text: '!!!'
+    nextNode: {fileID: 0}
