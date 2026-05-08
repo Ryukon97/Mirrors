@@ -13,19 +13,30 @@ public class TextNodeChainEditor : EditorWindow
     private Vector2 _scroll;
     private TextNode _loadedHead = null;
 
-    // ─── NodeEntry ────────────────────────────────────────────────────────────
+    // ─── 에디터 전용 데이터 ───────────────────────────────────────────────────
+    // TextNode 하나에 대응
     private class NodeEntry
     {
         public string fileName = "TextNode";
-        public string text = "";
+        public bool isSelection = false;
         public TextNode asset = null;
 
-        // override 여부 토글
-        public bool usePrevOverride = false;
-        public bool useNextOverride = false;
+        // isSelection = false : singles[0]만 사용 (text + nextNode)
+        // isSelection = true  : singles 전체 사용
+        public List<SingleEntry> singles = new List<SingleEntry> { new SingleEntry() };
 
-        // 실제 오버라이드 대상 (ObjectField)
+        // prevNode override
+        public bool usePrevOverride = false;
         public TextNode overridePrev = null;
+    }
+
+    // SingleTextNode 하나에 대응
+    private class SingleEntry
+    {
+        public string text = "";
+
+        // nextNode: auto = 다음 NodeEntry, override = 직접 지정
+        public bool useNextOverride = false;
         public TextNode overrideNext = null;
     }
 
@@ -34,7 +45,7 @@ public class TextNodeChainEditor : EditorWindow
     public static void Open()
     {
         var win = GetWindow<TextNodeChainEditor>("TextNode Chain Editor");
-        win.minSize = new Vector2(520, 420);
+        win.minSize = new Vector2(560, 440);
     }
 
     // ─── GUI 루트 ─────────────────────────────────────────────────────────────
@@ -54,11 +65,9 @@ public class TextNodeChainEditor : EditorWindow
         EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
         GUILayout.Label("TextNode Chain Editor", EditorStyles.boldLabel);
         GUILayout.FlexibleSpace();
-
         if (GUILayout.Button("Save", EditorStyles.toolbarButton, GUILayout.Width(60))) SaveChain();
         if (GUILayout.Button("Load", EditorStyles.toolbarButton, GUILayout.Width(60))) LoadChain();
         if (GUILayout.Button("New", EditorStyles.toolbarButton, GUILayout.Width(60))) NewChain();
-
         EditorGUILayout.EndHorizontal();
     }
 
@@ -72,11 +81,9 @@ public class TextNodeChainEditor : EditorWindow
         {
             string chosen = EditorUtility.OpenFolderPanel("저장 폴더 선택", Application.dataPath, "");
             if (!string.IsNullOrEmpty(chosen))
-            {
                 _savePath = chosen.StartsWith(Application.dataPath)
                     ? "Assets" + chosen.Substring(Application.dataPath.Length)
                     : chosen;
-            }
         }
         EditorGUILayout.EndHorizontal();
     }
@@ -88,14 +95,12 @@ public class TextNodeChainEditor : EditorWindow
         _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.ExpandHeight(true));
 
         for (int i = 0; i < _nodes.Count; i++)
-        {
-            if (DrawNodeEntry(i)) break; // 삭제/이동 시 루프 탈출
-        }
+            if (DrawNodeEntry(i)) break;
 
         EditorGUILayout.EndScrollView();
     }
 
-    // 반환값 true = 리스트 변경됨 (루프 중단 필요)
+    // 반환값 true = 리스트 변경됨
     private bool DrawNodeEntry(int i)
     {
         var node = _nodes[i];
@@ -103,7 +108,9 @@ public class TextNodeChainEditor : EditorWindow
 
         var bgColor = isHead
             ? new Color(0.3f, 0.55f, 0.3f, 0.28f)
-            : new Color(0.25f, 0.35f, 0.5f, 0.18f);
+            : node.isSelection
+                ? new Color(0.55f, 0.4f, 0.1f, 0.28f)
+                : new Color(0.25f, 0.35f, 0.5f, 0.18f);
 
         var rect = EditorGUILayout.BeginVertical(GUILayout.MinHeight(20));
         EditorGUI.DrawRect(rect, bgColor);
@@ -112,9 +119,21 @@ public class TextNodeChainEditor : EditorWindow
         EditorGUILayout.BeginHorizontal();
 
         string label = isHead ? $"[{i}] HEAD" : $"[{i}]";
-        EditorGUILayout.LabelField(label, EditorStyles.boldLabel, GUILayout.Width(70));
-        EditorGUILayout.LabelField("FileName:", GUILayout.Width(60));
-        node.fileName = EditorGUILayout.TextField(node.fileName, GUILayout.Width(150));
+        EditorGUILayout.LabelField(label, EditorStyles.boldLabel, GUILayout.Width(60));
+
+        EditorGUILayout.LabelField("Name:", GUILayout.Width(40));
+        node.fileName = EditorGUILayout.TextField(node.fileName, GUILayout.Width(130));
+
+        // isSelection 토글
+        bool newIsSel = EditorGUILayout.ToggleLeft("Selection", node.isSelection, GUILayout.Width(76));
+        if (newIsSel != node.isSelection)
+        {
+            node.isSelection = newIsSel;
+            // 단일→선택지: 이미 singles[0]이 있으므로 그대로
+            // 선택지→단일: singles를 1개로 줄임
+            if (!node.isSelection && node.singles.Count > 1)
+                node.singles.RemoveRange(1, node.singles.Count - 1);
+        }
 
         GUILayout.FlexibleSpace();
 
@@ -123,16 +142,14 @@ public class TextNodeChainEditor : EditorWindow
         if (GUILayout.Button("▲", GUILayout.Width(24)))
         {
             (_nodes[i], _nodes[i - 1]) = (_nodes[i - 1], _nodes[i]);
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndHorizontal(); EditorGUILayout.EndVertical();
             return true;
         }
         GUI.enabled = i < _nodes.Count - 1;
         if (GUILayout.Button("▼", GUILayout.Width(24)))
         {
             (_nodes[i], _nodes[i + 1]) = (_nodes[i + 1], _nodes[i]);
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndHorizontal(); EditorGUILayout.EndVertical();
             return true;
         }
         GUI.enabled = true;
@@ -144,70 +161,122 @@ public class TextNodeChainEditor : EditorWindow
         {
             _nodes.RemoveAt(i);
             GUI.color = oldCol;
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndHorizontal(); EditorGUILayout.EndVertical();
             return true;
         }
         GUI.color = oldCol;
 
         EditorGUILayout.EndHorizontal();
 
-        // ── 텍스트 ───────────────────────────────────────────────────────────
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("Text:", GUILayout.Width(40));
-        node.text = EditorGUILayout.TextArea(node.text, GUILayout.MinHeight(36), GUILayout.ExpandWidth(true));
-        EditorGUILayout.EndHorizontal();
+        // ── prev 행 ───────────────────────────────────────────────────────────
+        DrawPrevRow(node, i);
 
-        // ── prev / next 행 ───────────────────────────────────────────────────
-        DrawLinkRow(node, isPrev: true, autoIndex: i - 1);
-        DrawLinkRow(node, isPrev: false, autoIndex: i + 1);
+        // ── SingleTextNode 행들 ───────────────────────────────────────────────
+        if (node.isSelection)
+        {
+            // 선택지 모드: 여러 SingleEntry
+            for (int s = 0; s < node.singles.Count; s++)
+                DrawSingleEntry(node, s, i, isSelection: true);
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(12);
+            if (GUILayout.Button("+ 선택지 추가", GUILayout.Width(100)))
+                node.singles.Add(new SingleEntry());
+            EditorGUILayout.EndHorizontal();
+        }
+        else
+        {
+            // 단일 모드: singles[0]만
+            DrawSingleEntry(node, 0, i, isSelection: false);
+        }
 
         EditorGUILayout.Space(4);
         EditorGUILayout.EndVertical();
         return false;
     }
 
-    // ── prev / next 한 행 ────────────────────────────────────────────────────
-    private void DrawLinkRow(NodeEntry node, bool isPrev, int autoIndex)
+    // ── prevNode 행 ───────────────────────────────────────────────────────────
+    private void DrawPrevRow(NodeEntry node, int nodeIndex)
     {
-        bool valid = autoIndex >= 0 && autoIndex < _nodes.Count;
-        string autoLabel = valid ? _nodes[autoIndex].fileName : "null";
-        string linkLabel = isPrev ? "prev" : "next";
-
-        // ref 대신 로컬 변수로 읽고 다시 기록 (C# ref-to-field 제약 우회)
-        bool useOverride = isPrev ? node.usePrevOverride : node.useNextOverride;
-        TextNode overrideVal = isPrev ? node.overridePrev : node.overrideNext;
+        bool use = node.usePrevOverride;
+        TextNode ov = node.overridePrev;
+        string autoLabel = nodeIndex > 0 ? _nodes[nodeIndex - 1].fileName : "null";
 
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField(linkLabel + ":", GUILayout.Width(34));
+        EditorGUILayout.LabelField("prev:", GUILayout.Width(34));
 
-        // override 토글
-        bool newUse = EditorGUILayout.ToggleLeft("override", useOverride, GUILayout.Width(78));
-        if (newUse != useOverride)
-        {
-            useOverride = newUse;
-            if (!useOverride) overrideVal = null; // override 해제 시 초기화
-        }
+        bool newUse = EditorGUILayout.ToggleLeft("override", use, GUILayout.Width(78));
+        if (newUse != use) { use = newUse; if (!use) ov = null; }
 
-        if (useOverride)
-        {
-            // ObjectField로 직접 지정
-            overrideVal = (TextNode)EditorGUILayout.ObjectField(
-                overrideVal, typeof(TextNode), false, GUILayout.ExpandWidth(true));
-        }
+        if (use)
+            ov = (TextNode)EditorGUILayout.ObjectField(ov, typeof(TextNode), false, GUILayout.ExpandWidth(true));
         else
         {
-            // 자동 값 표시 (읽기 전용)
             GUI.enabled = false;
             EditorGUILayout.TextField($"auto  →  {autoLabel}", GUILayout.ExpandWidth(true));
             GUI.enabled = true;
         }
-
         EditorGUILayout.EndHorizontal();
 
-        // 값 기록
-        if (isPrev) { node.usePrevOverride = useOverride; node.overridePrev = overrideVal; }
-        else { node.useNextOverride = useOverride; node.overrideNext = overrideVal; }
+        node.usePrevOverride = use;
+        node.overridePrev = ov;
+    }
+
+    // ── SingleEntry 한 행 ─────────────────────────────────────────────────────
+    private void DrawSingleEntry(NodeEntry node, int s, int nodeIndex, bool isSelection)
+    {
+        var single = node.singles[s];
+        string autoNextLabel = (nodeIndex + 1 < _nodes.Count) ? _nodes[nodeIndex + 1].fileName : "null";
+
+        // 선택지 모드일 때 헤더 + 삭제
+        if (isSelection)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField($"  [{s}]", EditorStyles.boldLabel, GUILayout.Width(30));
+
+            // 삭제 (최소 1개 유지)
+            GUI.enabled = node.singles.Count > 1;
+            var oldCol = GUI.color;
+            GUI.color = new Color(1f, 0.5f, 0.5f);
+            if (GUILayout.Button("✕", GUILayout.Width(20)))
+            {
+                node.singles.RemoveAt(s);
+                GUI.color = oldCol; GUI.enabled = true;
+                EditorGUILayout.EndHorizontal();
+                return;
+            }
+            GUI.color = oldCol; GUI.enabled = true;
+            EditorGUILayout.EndHorizontal();
+        }
+
+        // text
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(isSelection ? "   text:" : "text:", GUILayout.Width(isSelection ? 50 : 40));
+        single.text = EditorGUILayout.TextArea(single.text, GUILayout.MinHeight(34), GUILayout.ExpandWidth(true));
+        EditorGUILayout.EndHorizontal();
+
+        // nextNode
+        bool use = single.useNextOverride;
+        TextNode ov = single.overrideNext;
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(isSelection ? "   next:" : "next:", GUILayout.Width(isSelection ? 50 : 40));
+
+        bool newUse = EditorGUILayout.ToggleLeft("override", use, GUILayout.Width(78));
+        if (newUse != use) { use = newUse; if (!use) ov = null; }
+
+        if (use)
+            ov = (TextNode)EditorGUILayout.ObjectField(ov, typeof(TextNode), false, GUILayout.ExpandWidth(true));
+        else
+        {
+            GUI.enabled = false;
+            EditorGUILayout.TextField($"auto  →  {autoNextLabel}", GUILayout.ExpandWidth(true));
+            GUI.enabled = true;
+        }
+        EditorGUILayout.EndHorizontal();
+
+        single.useNextOverride = use;
+        single.overrideNext = ov;
     }
 
     // ── 하단 버튼 ─────────────────────────────────────────────────────────────
@@ -238,7 +307,7 @@ public class TextNodeChainEditor : EditorWindow
 
         string headPath = $"{_savePath}/{_nodes[0].fileName}.asset";
 
-        // ── 1단계: Head SO 생성 또는 재사용 (main asset) ─────────────────────
+        // ── 1단계: Head SO (main asset) ───────────────────────────────────────
         TextNode headSO = AssetDatabase.LoadAssetAtPath<TextNode>(headPath);
         if (headSO == null)
         {
@@ -246,21 +315,13 @@ public class TextNodeChainEditor : EditorWindow
             headSO.name = _nodes[0].fileName;
             AssetDatabase.CreateAsset(headSO, headPath);
         }
-        headSO.text = _nodes[0].text;
-        headSO.prevNode = null;
-        headSO.nextNode = null;
         _nodes[0].asset = headSO;
 
-        // ── 2단계: 기존 sub-asset 전부 제거 후 새로 추가 ─────────────────────
-        // (순서·이름 변경에 안전하게 대응하기 위해 전부 교체)
-        var existingSubs = AssetDatabase.LoadAllAssetsAtPath(headPath);
-        foreach (var obj in existingSubs)
+        // ── 2단계: 기존 sub-asset 제거 ────────────────────────────────────────
+        foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(headPath))
         {
             if (obj != headSO && obj is TextNode sub)
-            {
-                // 참조를 끊고 제거
                 DestroyImmediate(sub, true);
-            }
         }
 
         // ── 3단계: 나머지 노드를 sub-asset으로 생성 ──────────────────────────
@@ -270,28 +331,38 @@ public class TextNodeChainEditor : EditorWindow
             var entry = _nodes[i];
             var so = ScriptableObject.CreateInstance<TextNode>();
             so.name = entry.fileName;
-            so.text = entry.text;
-            so.prevNode = null;
-            so.nextNode = null;
             entry.asset = so;
             assets.Add(so);
             AssetDatabase.AddObjectToAsset(so, headPath);
         }
 
-        // ── 4단계: prev / next 연결 (override 우선, 없으면 자동) ─────────────
+        // ── 4단계: 각 SO 데이터 + 링크 설정 ──────────────────────────────────
         for (int i = 0; i < assets.Count; i++)
         {
             var entry = _nodes[i];
+            var so = assets[i];
 
-            assets[i].prevNode = entry.usePrevOverride
+            so.isSelection = entry.isSelection;
+
+            // prevNode
+            so.prevNode = entry.usePrevOverride
                 ? entry.overridePrev
                 : (i > 0 ? assets[i - 1] : null);
 
-            assets[i].nextNode = entry.useNextOverride
-                ? entry.overrideNext
-                : (i < assets.Count - 1 ? assets[i + 1] : null);
+            // node (List<SingleTextNode>)
+            so.node = new List<SingleTextNode>();
+            foreach (var s in entry.singles)
+            {
+                so.node.Add(new SingleTextNode
+                {
+                    text = s.text,
+                    nextNode = s.useNextOverride
+                        ? s.overrideNext
+                        : (i < assets.Count - 1 ? assets[i + 1] : null),
+                });
+            }
 
-            EditorUtility.SetDirty(assets[i]);
+            EditorUtility.SetDirty(so);
         }
 
         AssetDatabase.SaveAssets();
@@ -325,62 +396,69 @@ public class TextNodeChainEditor : EditorWindow
             return;
         }
 
-        // main asset이 Head여야 함 (sub-asset을 선택했을 경우 main으로 교정)
+        // sub-asset 선택 시 main으로 교정
         if (!AssetDatabase.IsMainAsset(head))
         {
             var mainObj = AssetDatabase.LoadMainAssetAtPath(relPath);
-            if (mainObj is TextNode mainNode) head = mainNode;
-            else
-            {
-                EditorUtility.DisplayDialog("오류", "선택한 파일의 Main Asset이 TextNode가 아닙니다.", "OK");
-                return;
-            }
+            if (mainObj is TextNode mn) head = mn;
+            else { EditorUtility.DisplayDialog("오류", "Main Asset이 TextNode가 아닙니다.", "OK"); return; }
         }
 
-        // 체인의 맨 앞으로 이동 (prev 거슬러 올라가기)
+        // 체인 맨 앞으로
         var visited = new HashSet<TextNode>();
         var current = head;
         while (current.prevNode != null && !visited.Contains(current.prevNode))
         {
-            visited.Add(current);
-            current = current.prevNode;
+            visited.Add(current); current = current.prevNode;
         }
         visited.Clear();
 
-        // 앞에서 끝까지 순회
+        // 앞→끝 순회 (첫 번째 singles[0].nextNode 경로만 따라감)
         _nodes.Clear();
         var orderedAssets = new List<TextNode>();
         while (current != null && !visited.Contains(current))
         {
             visited.Add(current);
             orderedAssets.Add(current);
-            _nodes.Add(new NodeEntry
+
+            var entry = new NodeEntry
             {
                 fileName = current.name,
-                text = current.text,
+                isSelection = current.isSelection,
                 asset = current,
-            });
-            current = current.nextNode;
+                singles = new List<SingleEntry>(),
+            };
+
+            foreach (var sn in current.node)
+                entry.singles.Add(new SingleEntry { text = sn.text });
+
+            _nodes.Add(entry);
+            current = (current.node != null && current.node.Count > 0) ? current.node[0].nextNode : null;
         }
 
-        // 자동 연결과 실제 값이 다르면 override로 표시
+        // override 판정
         for (int i = 0; i < _nodes.Count; i++)
         {
             var so = orderedAssets[i];
             var entry = _nodes[i];
 
-            TextNode autoPrev = (i > 0) ? orderedAssets[i - 1] : null;
-            TextNode autoNext = (i < orderedAssets.Count - 1) ? orderedAssets[i + 1] : null;
-
+            // prev override
+            TextNode autoPrev = i > 0 ? orderedAssets[i - 1] : null;
             if (so.prevNode != autoPrev)
             {
                 entry.usePrevOverride = true;
                 entry.overridePrev = so.prevNode;
             }
-            if (so.nextNode != autoNext)
+
+            // next override (각 single)
+            TextNode autoNext = i < orderedAssets.Count - 1 ? orderedAssets[i + 1] : null;
+            for (int s = 0; s < entry.singles.Count && s < so.node.Count; s++)
             {
-                entry.useNextOverride = true;
-                entry.overrideNext = so.nextNode;
+                if (so.node[s].nextNode != autoNext)
+                {
+                    entry.singles[s].useNextOverride = true;
+                    entry.singles[s].overrideNext = so.node[s].nextNode;
+                }
             }
         }
 
