@@ -21,6 +21,7 @@ public class TextController : MonoBehaviour
     public void HideView() => textView.HideView();
     public void SetAndPlayNode(TextNode textNode)
     {
+        PlayerSubState_PlayNextNode.TextController = this;
         this.textNode = textNode;
         PlayCurrentNode();
     }
