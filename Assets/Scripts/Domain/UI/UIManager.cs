@@ -1,13 +1,14 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class TitleManager : MonoBehaviour
+public class UIManager : MonoBehaviour
 {
   
     public GameObject TitlePanel;
     public GameObject MenuPanel;
+    public GameObject CharacterSelectPanel;
 
-   
+
     public InputAction AnyKeyAction;
 
     
@@ -36,7 +37,19 @@ public class TitleManager : MonoBehaviour
     }
 
   
-    public void OnClickStart() => Debug.Log("게임을 시작합니다");
+    public void OnClickStart()
+    {
+        MenuPanel.SetActive(false);
+        CharacterSelectPanel.SetActive(true);
+    }
+
+    public void SelectAndStart(int CharID) //캐릭터 선택 부분
+    {
+        PlayerPrefs.SetInt("SelectedCharacterID", CharID);
+        PlayerPrefs.Save();
+
+        FindAnyObjectByType<ScenceManager>().NextSence(); // Find형식을 썼음 차후 최적화 생각중
+    }
 
     public void OnClickExit()
     {
