@@ -73,9 +73,11 @@ public class UIManager : MonoBehaviour
     private void ShowMenu()
     {
         isTitleActive = false;
-        TitlePanel.SetActive(false);
-        MenuPanel.SetActive(true);
-        if(playerSelectionPanel == null )
+        TitlePanel.SetActive(false); 
+        if (MenuPanel != null)
+            MenuPanel.SetActive(true);
+
+        if (playerSelectionPanel != null)
             playerSelectionPanel.SetActive(true);
     }
 }
