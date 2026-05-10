@@ -9,7 +9,7 @@ public class UIManager : MonoBehaviour
     public GameObject playerSelectionPanel;
 
 
-    public SceneManager scenceManager; //인스펙터에 오픈월드관련을 드래그해서 불러오기 Find같이 일일히 찾기보다 찾아주는 역할
+    public SceneLoader scenceManager; //인스펙터에 오픈월드관련을 드래그해서 불러오기 Find같이 일일히 찾기보다 찾아주는 역할
     public InputAction AnyKeyAction;
 
     
@@ -35,6 +35,8 @@ public class UIManager : MonoBehaviour
     {
         TitlePanel.SetActive(true);
         MenuPanel.SetActive(false);
+        if(playerSelectionPanel != null ) 
+            playerSelectionPanel.SetActive(false);
     }
 
   
@@ -50,7 +52,7 @@ public class UIManager : MonoBehaviour
         PlayerPrefs.SetInt("SelectedCharacterID", CharID);
         PlayerPrefs.Save();
 
-        SceneManager.Instance.NextSence(); // 캐릭터 선택후 넘어가는 싱글톤 오픈월드로 넘어감
+        SceneLoader.Instance.NextSence(); // 캐릭터 선택후 넘어가는 싱글톤 오픈월드로 넘어감
     }
 
     public void OnClickExit()
@@ -73,5 +75,7 @@ public class UIManager : MonoBehaviour
         isTitleActive = false;
         TitlePanel.SetActive(false);
         MenuPanel.SetActive(true);
+        if(playerSelectionPanel == null )
+            playerSelectionPanel.SetActive(true);
     }
 }
