@@ -7,7 +7,6 @@ public class QuestLoopManager : MonoBehaviour, IQuestLoopManager
 
     [SerializeField] QuestDataContainer questDataContainer;
     [SerializeField] QuestProgressor progressor;
-    QuestConditionCheckService conditionCheckService;
 
     private void Awake()
     {
@@ -18,7 +17,6 @@ public class QuestLoopManager : MonoBehaviour, IQuestLoopManager
         }
         instance = this;
         TextControllerManager.OnTextNodeFinished += HandleTextNodeFinished;
-        conditionCheckService = new QuestConditionCheckService();
     }
 
     // ------------------ public -----------------------

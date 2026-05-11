@@ -1,23 +1,28 @@
+using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class QuestProgressor : MonoBehaviour
 {
-    private struct Progress
-    {
-        public QuestProgressData data;
-        public bool isCompleted;
-
-        public Progress(QuestProgressData data, bool isCompleted)
-        {
-            this.data = data;
-            this.isCompleted = isCompleted;
-        }
-    }
     private QuestData pinnedQuestData;
     private List<QuestData> questDatas;
-    private Dictionary<string, List<Progress>> progressDict;
+    private Dictionary<string, List<QuestProgressData>> progressDict;
     QuestConditionCheckService conditionCheckService;
+    QuestProgressService questProgressService;
+
+    private void Awake()
+    {
+        conditionCheckService = new QuestConditionCheckService();
+        questProgressService = new QuestProgressService();
+    }
+
+    private void OnEnable()
+    {
+        // OnInventoryChanged += HandleInventoryChanged;
+        // OnEnemyKilled += HandleQuestProgressed;
+        // ... subscribe what u need. un sub in OnDisabled
+    }
 
     // ------------------- public ----------------
 
@@ -33,9 +38,13 @@ public class QuestProgressor : MonoBehaviour
         for(int i = 0; i < quest.conditions.Length; i++)
         {
             var origin = quest.conditions[i];
-            var current = GetNewProgress(origin);
+            var current = origin.GetNewProgress();
             QuestProgressData progress = new QuestProgressData(qid, origin, current);
-            BindQuestTracker(qid, progress);
+            if (progressDict.ContainsKey(qid) == false)
+            {
+                progressDict.Add(qid, new List<QuestProgressData>());
+            }
+            progressDict[qid].Add(progress);
         }
     }
     public void RemoveQuest(string qid)
@@ -47,16 +56,16 @@ public class QuestProgressor : MonoBehaviour
         {
             // Todo Here: Set Viewer: hide pinnedQuest
         }
-        UnbindQuestTracker(qid);
+        progressDict.Remove(qid);
     }
     public bool IsCompleted(string qid)
     {
-        if (progressDict.TryGetValue(qid, out List<Progress> progresses))
+        if (progressDict.TryGetValue(qid, out List<QuestProgressData> progresses))
         {
             for (int i = 0; i < progresses.Count; i++)
             {
                 var progress = progresses[i];
-                if (progress.isCompleted == false)
+                if (progress.completion == false)
                     return false;
             }
             return true;
@@ -65,25 +74,44 @@ public class QuestProgressor : MonoBehaviour
         return false;
     }
 
+
     // ------------------- private----------------
-    void BindQuestTracker(string qid, QuestProgressData progress)
+
+
+    // Here's To add Progress handler:
+    //
+    // eg. Inventory Changed Event ?
+    // void HandleInventoryChanged(InventoryChangedArgs args)
+    // => args.amount > 0 ?
+    //      UpdateProgresses(new QuestProgressedArgs(EQuestConditionType.Obtain, args.amount));
+    //      : UpdateProgresses(new QuestProgressedArgs(EQuestConditionType.Discard, args.amount));
+    // 
+    // eg. Enemy Killed Event?
+    // void HandleEnemyKilled(EnemyKilledArgs args)
+    // => UpdateProgresses(new QuestProgressedArgs(EQuestConditionType.Killed, args.amount));
+    //
+    // And Add QuestProgressService a discrete Handler. 
+    // And Add Subscription snippets in Awake()
+
+
+    void UpdateProgresses(QuestProgressedArgs args)
     {
-        if(progressDict.ContainsKey(qid) == false)
+        foreach (var progresses in progressDict.Values)
         {
-            progressDict.Add(qid, new List<Progress>());
+            foreach (var progress in progresses)
+            {
+                if (progress.origin.type != args.type) return;
+                if (progress.completion) return;
+
+                questProgressService.Do(args, progress);
+
+                if (conditionCheckService.IsMet(progress))
+                    progress.Complete();
+            }
         }
-        // Todo Here: subscribe what progress need to listen.
-        // implement in another class since it'll become too huge codes
-
-        progressDict[qid].Add(new Progress(progress, false));
     }
-    void UnbindQuestTracker(string qid)
-    {
-        if (progressDict.ContainsKey(qid) == false) return;
 
-        // Todo Here: unsub qid's progress subscriptions. 
-        // implement in another class since it'll become too huge codes(same as binding)
-    }
+    // ---------------------- Utils -----------------
 
     bool TryGetData(string qid, out QuestData data)
     {
@@ -97,15 +125,5 @@ public class QuestProgressor : MonoBehaviour
         }
         data = null;
         return false;
-    }
-    // Only use to start condition tracking progress
-    // Get new conditionData that all field zero-init. 
-    // To complete quest: this progress values > origin values
-    QuestConditionData GetNewProgress(QuestConditionData origin)
-    {
-        QuestConditionData progress = origin;
-        progress.valueInt = 0;
-
-        return progress;
     }
 }
