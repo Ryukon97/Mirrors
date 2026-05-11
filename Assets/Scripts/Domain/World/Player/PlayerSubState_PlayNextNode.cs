@@ -23,9 +23,9 @@ public class PlayerSubState_PlayNextNode : PlayerSubState_Base
 
     private void OnInteracted(InputAction.CallbackContext obj)
     {
-        if (TextControllerManager.controller.IsSelection) return;
+        if (TextControllerManager.Controller.IsSelection) return;
 
-        bool played = TextControllerManager.controller.PlayNextNode();
+        bool played = TextControllerManager.Controller.PlayNextNode();
         Debug.Log("Interacted");
         if (played == false)
         {

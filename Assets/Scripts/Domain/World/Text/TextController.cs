@@ -47,7 +47,7 @@ public class TextController : MonoBehaviour
     }
     public void SetAndPlayNode(TextNode textNode)
     {
-        TextControllerManager.controller = this;
+        TextControllerManager.Controller = this;
         this.textNode = textNode;
         PlayCurrentNode();
     }

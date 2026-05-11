@@ -4,7 +4,9 @@ using UnityEngine;
 public class TextControllerManager : MonoBehaviour
 {
     public static event Action<TextNodeFinishedArgs> OnTextNodeFinished;
-    public static TextController controller
+
+    static TextController controller;
+    public static TextController Controller
     { 
         get
         {
@@ -13,7 +15,8 @@ public class TextControllerManager : MonoBehaviour
         
         set
         {
-            controller.OnTextNodeFinished -= HandleTextNodeFinished;
+            if(controller != null)
+                controller.OnTextNodeFinished -= HandleTextNodeFinished;
             controller = value;
             controller.OnTextNodeFinished += HandleTextNodeFinished;
         }
