@@ -1497,6 +1497,8 @@ MonoBehaviour:
   manaBarImage: {fileID: 212104277}
   skillButton: {fileID: 1756592754}
   qteManager: {fileID: 1070438484}
+  bossPrefab: {fileID: 6921370779738444768, guid: 5997272302d44ff41859bab8178ad4f3, type: 3}
+  bossSpawnPoint: {fileID: 1262736138}
 --- !u!4 &937978259
 Transform:
   m_ObjectHideFlags: 0
@@ -2124,6 +2126,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattleCharacter
   maxHp: 100
   hpBarImage: {fileID: 784201833}
+--- !u!1 &1262736137
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1262736138}
+  m_Layer: 0
+  m_Name: BossSpawn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1262736138
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1262736137}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.38, y: -0, z: -0.11}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1351722534 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 526183141227759125, guid: 274cfc7686373b248ac0ec4307f722fa, type: 3}
@@ -2891,3 +2924,4 @@ SceneRoots:
   - {fileID: 991246450}
   - {fileID: 937978259}
   - {fileID: 1070438485}
+  - {fileID: 1262736138}
