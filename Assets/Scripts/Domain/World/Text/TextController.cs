@@ -11,7 +11,7 @@ public class TextController : MonoBehaviour
     private TextNode textNode;
     private TextModel textModel;
     public bool IsSelection { get => textNode != null && textNode.node.Count > 1; }
-    public event Action<TextNodeFinishedEvent> OnTextNodeFinished;
+    public event Action<TextNodeFinishedArgs> OnTextNodeFinished;
     private void Awake()
     {
         textModel = new TextModel(); // 
@@ -36,7 +36,7 @@ public class TextController : MonoBehaviour
         HideView();
         if (textNode == null)
         {
-            EndNode();
+            EndNodeChain();
             return false;
         }
         SetModelByViewType(textNode.viewType);
@@ -68,7 +68,7 @@ public class TextController : MonoBehaviour
         PlayCurrentNode();
     }
     // ----------------  private ---------------- 
-    private void EndNode()
+    private void EndNodeChain()
     {
         HideView();
     }
