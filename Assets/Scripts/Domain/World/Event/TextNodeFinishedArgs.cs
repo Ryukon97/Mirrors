@@ -1,3 +1,7 @@
+
+using System;
+
+[Serializable]
 public struct TextNodeFinishedArgs
 {
     public ETextNodeFinishedEventType type;

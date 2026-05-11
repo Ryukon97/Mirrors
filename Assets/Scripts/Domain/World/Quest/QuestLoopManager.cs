@@ -13,5 +13,7 @@ public class QuestLoopManager : MonoBehaviour
             return;
 
         string qid = args.arg1;
+
+        Debug.Log($"Quest {qid} Started");
     }
 }
