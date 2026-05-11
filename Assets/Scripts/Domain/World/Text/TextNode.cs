@@ -9,7 +9,7 @@ public class TextNode : ScriptableObject
     public TextNode prevNode;
     public bool isSelection;
     public List<SingleTextNode> node;
-    public TextNodeFinishedEvent finishedEvent;
+    public TextNodeFinishedArgs finishedEvent;
 }
 
 [Serializable]
