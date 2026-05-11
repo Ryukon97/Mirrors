@@ -11,7 +11,7 @@ public class TextController : MonoBehaviour
     private TextNode textNode;
     private TextModel textModel;
     public bool IsSelection { get => textNode != null && textNode.node.Count > 1; }
-
+    public event Action<TextNodeFinishedEvent> OnTextNodeFinished;
     private void Awake()
     {
         textModel = new TextModel(); // 
@@ -57,6 +57,7 @@ public class TextController : MonoBehaviour
         {
             return false;
         }
+        OnTextNodeFinished?.Invoke(textNode.finishedEvent);
         textNode = textNode.node[selection].nextNode;
         return PlayCurrentNode();
     }
