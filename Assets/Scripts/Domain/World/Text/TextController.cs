@@ -57,7 +57,8 @@ public class TextController : MonoBehaviour
         {
             return false;
         }
-        OnTextNodeFinished?.Invoke(textNode.finishedEvent);
+        if(textNode.finishedEvent.type != ETextNodeFinishedEventType.None)
+            OnTextNodeFinished?.Invoke(textNode.finishedEvent);
         textNode = textNode.node[selection].nextNode;
         return PlayCurrentNode();
     }
