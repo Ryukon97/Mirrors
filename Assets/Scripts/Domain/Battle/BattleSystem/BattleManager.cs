@@ -34,6 +34,11 @@ public class BattleManager : MonoBehaviour
     [Header("QTE System")]
     public QTEManager qteManager;
 
+    [Header("Boss Settings")]
+    public GameObject bossPrefab;      // 소환할 보스 프리팹
+    public Transform bossSpawnPoint;   // 보스가 나타날 위치
+    private bool isBossSpawned = false; // 보스가 이미 소환되었는지 체크
+
     private List<BattleUnitOrder> turnTimeline = new List<BattleUnitOrder>();
     private List<GameObject> activeTimelineIcons = new List<GameObject>();
 
@@ -191,15 +196,50 @@ public class BattleManager : MonoBehaviour
         if (currentTarget == deadEnemy)
         {
             currentTarget = null;
+        }
+
+        UpdateTimelineUI();
+
+        if (enemies.Count == 0)
+        {
+            // 보스가 아직 안 나왔다면 소환 시퀀스 실행
+            if (bossPrefab != null && !isBossSpawned)
+            {
+                StartCoroutine(SpawnBossSequence());
+            }
+            // 보스까지 죽었거나, 소환할 보스가 아예 없을 때만 승리
+            else if (isBossSpawned || bossPrefab == null)
+            {
+                // [중요] 상태 변경 전 로그 확인
+                Debug.Log("<color=yellow>모든 적 처치! 승리 상태로 전환합니다.</color>");
+                StopAllCoroutines();
+                // CurrentState가 private set인 경우 내부에서만 변경 가능하므로 아래처럼 작성
+                var field = typeof(BattleManager).GetProperty("CurrentState");
+                field.SetValue(this, EBattleState.Won);
+            }
+        }
+        else
+        {
+            // 적이 남아있다면 다음 타겟 자동 설정
             AutoTargetNext();
         }
-        UpdateTimelineUI();
     }
 
     private void AutoTargetNext()
     {
-        currentTarget = enemies.Find(e => e != null && e.CurrentHp > 0);
-        if (currentTarget != null) currentTarget.SetSelection(true);
+        if (enemies == null || enemies.Count == 0)
+        {
+            currentTarget = null;
+            return;
+        }
+
+        // 살아있는 적 중 첫 번째 선택
+        currentTarget = enemies.Find(e => e != null && e.gameObject != null && e.CurrentHp > 0);
+
+        if (currentTarget != null)
+        {
+            currentTarget.SetSelection(true);
+        }
     }
 
     // (이하 InitializeTimeline, DetermineNextTurn, CycleFinishedUnit, UpdateUltimateUI, UpdateTimelineUI는 기존과 동일)
@@ -219,11 +259,38 @@ public class BattleManager : MonoBehaviour
     private IEnumerator EnemyTurnSequence()
     {
         CurrentState = EBattleState.Busy;
+
         BattleUnitOrder currentUnit = turnTimeline[0];
         Enemy actingEnemy = currentUnit.enemyReference;
-        if (actingEnemy != null) yield return StartCoroutine(actingEnemy.AttackSequence(player.transform, qteManager.StartQTE));
-        if (player.CurrentHp <= 0) CurrentState = EBattleState.Lost;
-        else { CycleFinishedUnit(); yield return new WaitForSeconds(0.5f); DetermineNextTurn(); }
+
+        if (actingEnemy != null && actingEnemy.CurrentHp > 0)
+        {
+            // 현재 적이 보스인지 체크
+            BossEnemy boss = actingEnemy as BossEnemy;
+
+            if (boss != null && boss.ShouldTriggerEvent())
+            {
+                // 보스 전용 기믹 공격 실행
+                yield return StartCoroutine(boss.DeceptiveQTESequence(player, qteManager.StartQTE));
+            }
+            else
+            {
+                // 일반 공격
+                yield return StartCoroutine(actingEnemy.AttackSequence(player.transform, qteManager.StartQTE));
+            }
+        }
+
+        // 이후 사망 체크 및 턴 종료 로직 (기존과 동일)
+        if (player.CurrentHp <= 0)
+        {
+            CurrentState = EBattleState.Lost;
+        }
+        else
+        {
+            CycleFinishedUnit();
+            yield return new WaitForSeconds(0.5f);
+            DetermineNextTurn();
+        }
     }
 
     private void InitializeTimeline()
@@ -266,5 +333,43 @@ public class BattleManager : MonoBehaviour
         if (currentTarget != null) currentTarget.SetSelection(false);
         currentTarget = target;
         currentTarget.SetSelection(true);
+    }
+    private IEnumerator SpawnBossSequence()
+    {
+        // 소환 시작 시 상태를 Busy로 고정하여 승리 판정 간섭 차단
+        var stateField = typeof(BattleManager).GetProperty("CurrentState");
+        stateField.SetValue(this, EBattleState.Busy);
+
+        isBossSpawned = true;
+
+        Debug.Log("<color=red>모든 적을 처치하자 거대한 기운이 나타납니다...</color>");
+        yield return new WaitForSeconds(1.5f);
+
+        if (bossPrefab != null)
+        {
+            GameObject bossObj = Instantiate(bossPrefab, bossSpawnPoint.position, bossSpawnPoint.rotation);
+            BossEnemy boss = bossObj.GetComponent<BossEnemy>();
+
+            if (boss != null)
+            {
+                enemies.Clear();
+                enemies.Add(boss);
+
+                turnTimeline.Clear();
+                turnTimeline.Add(new BattleUnitOrder { unitType = ECharacterType.Player, unitName = "Player" });
+                turnTimeline.Add(new BattleUnitOrder { unitType = ECharacterType.Enemy, unitName = "BOSS", enemyReference = boss });
+
+                UpdateTimelineUI();
+                SetTarget(boss); // 여기서 currentTarget이 확실히 잡힘
+            }
+        }
+
+        yield return new WaitForSeconds(1.0f);
+
+        Debug.Log("전투 재개 - 플레이어 턴으로 강제 복귀");
+
+        // DetermineNextTurn을 부르기 전에 상태를 확실히 PlayerTurn으로 밀어넣음
+        stateField.SetValue(this, EBattleState.PlayerTurn);
+        DetermineNextTurn();
     }
 }
