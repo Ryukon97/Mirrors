@@ -1,46 +1,89 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Enemy : MonoBehaviour
 {
     // --------------- 변수 영역 --------------
+    [Header("Stats")]
+    [SerializeField] private int maxHp = 200;
+    private int currentHp;
+    private Vector3 originalPosition;
+
     private const float ATTACK_DISTANCE = 1.5f;
     private const float MOVE_SPEED = 10.0f;
 
-    private int currentHp = 200;
-    private Vector3 originalPosition;
+    [Header("UI & Indicators")]
+    public GameObject hpCanvas;           // 머리 위 HP 캔버스
+    public Image hpBarImage;              // HP 게이지 이미지
+    public GameObject selectionUI;        // [변경] 선택 시 보여줄 월드 스페이스 UI 오브젝트
 
     public int CurrentHp => currentHp;
-    public GameObject selectionIndicator;
 
     // --------------- Unity Life Cycle --------------
+    private void Awake()
+    {
+        currentHp = maxHp;
+
+        // 시작 시 선택 UI는 꺼둡니다.
+        if (selectionUI != null)
+        {
+            selectionUI.SetActive(false);
+        }
+    }
+
     private void Start()
     {
         originalPosition = transform.position;
+        UpdateHpUI();
+    }
+
+    private void LateUpdate()
+    {
+        // 체력바와 선택 UI가 항상 카메라를 정면으로 바라보게 함 (빌보드)
+        if (Camera.main != null)
+        {
+            if (hpCanvas != null)
+            {
+                hpCanvas.transform.LookAt(hpCanvas.transform.position + Camera.main.transform.forward);
+            }
+
+            if (selectionUI != null && selectionUI.activeSelf)
+            {
+                selectionUI.transform.LookAt(selectionUI.transform.position + Camera.main.transform.forward);
+            }
+        }
     }
 
     // --------------- public APIs --------------
 
-     // 선택되었을 때 보여줄 이펙트나 이미지 (선택 사항)
-
     private void OnMouseDown()
     {
-        // 클릭 시 매니저에게 나를 타겟으로 설정하라고 알림
-        FindObjectOfType<BattleManager>().SetTarget(this);
+        Debug.Log($"<color=orange>{gameObject.name} 클릭됨!</color>");
+        if (BattleManager.Instance != null)
+            BattleManager.Instance.SetTarget(this);
     }
 
     public void SetSelection(bool isSelected)
     {
-        if (selectionIndicator != null)
-            selectionIndicator.SetActive(isSelected);
-    }
-    // Enemy.cs
+        if (selectionUI != null)
+        {
+            selectionUI.SetActive(isSelected);
 
-    // BattleManager에서 QTE 결과(isEvaded)를 받아서 실행하도록 매개변수 추가
+            if (isSelected)
+            {
+                // [수정] 모델과 겹치지 않게 위치 조정
+                // y는 1.0f(몸통 높이), z는 -0.5f(카메라 쪽으로 살짝 앞)로 설정
+                selectionUI.transform.localPosition = new Vector3(0, 1.0f, -0.5f);
+            }
+        }
+    }
+
+    // [공격 시퀀스] 턴제 적 공격 로직
     public IEnumerator AttackSequence(Transform target, Action<Action<bool>> requestQTE)
     {
-        // 1. 타겟(플레이어) 방향으로 이동
+        // 1. 플레이어 앞으로 이동
         Vector3 targetPos = target.position + (transform.position - target.position).normalized * ATTACK_DISTANCE;
 
         while (Vector3.Distance(transform.position, targetPos) > 0.1f)
@@ -49,20 +92,18 @@ public class Enemy : MonoBehaviour
             yield return null;
         }
 
-        // [추가] 2. 공격 직전 슬로우 모션 및 QTE 발생
-        Time.timeScale = 0.2f; // 시간을 5배 느리게 설정
-        Time.fixedDeltaTime = 0.02f * Time.timeScale; // 물리 연산 주기도 함께 조절 (부드러운 연출용)
+        // 2. 공격 직전 슬로우 모션 및 QTE 발생
+        Time.timeScale = 0.2f;
+        Time.fixedDeltaTime = 0.02f * Time.timeScale;
 
         bool isEvaded = false;
         bool qteFinished = false;
 
-        // 매니저를 통해 QTE 시작 (BattleManager에서 이 로직을 넘겨줌)
         requestQTE((result) => {
             isEvaded = result;
             qteFinished = true;
         });
 
-        // QTE가 끝날 때까지 대기 (실시간 시간 기준으로 대기해야 함)
         yield return new WaitUntil(() => qteFinished);
 
         // 3. 시간 정상화
@@ -72,7 +113,7 @@ public class Enemy : MonoBehaviour
         // 4. 대미지 판정
         if (isEvaded)
         {
-            Debug.Log("<color=cyan>회피 성공!</color>");
+            Debug.Log($"<color=cyan>[회피 성공]</color>");
         }
         else
         {
@@ -94,14 +135,21 @@ public class Enemy : MonoBehaviour
     public void TakeDamage(int damage)
     {
         currentHp -= damage;
-        Debug.Log($"{gameObject.name} HP 감소: {currentHp}");
+        currentHp = Mathf.Max(currentHp, 0);
+        UpdateHpUI();
 
         if (currentHp <= 0)
         {
-            Debug.Log($"{gameObject.name} 사망!");
-            // BattleManager의 리스트에서도 제거하기 위해 아래 함수 호출
-            FindObjectOfType<BattleManager>().RemoveEnemy(this);
+            if (BattleManager.Instance != null)
+                BattleManager.Instance.RemoveEnemy(this);
+
             Destroy(gameObject);
         }
+    }
+
+    private void UpdateHpUI()
+    {
+        if (hpBarImage != null)
+            hpBarImage.fillAmount = (float)currentHp / maxHp;
     }
 }
