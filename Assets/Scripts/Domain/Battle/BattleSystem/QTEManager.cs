@@ -10,7 +10,7 @@ public class QTEManager : MonoBehaviour
     public RectTransform successZone;
 
     private bool isActive = false;
-    private float rotationSpeed = 180f;
+    private float rotationSpeed = 300f;
     private Action<bool> onQTEFinished;
 
     private void Start()
@@ -54,12 +54,12 @@ public class QTEManager : MonoBehaviour
         isActive = false;
         float angleDiff = Mathf.Abs(Mathf.DeltaAngle(needle.localEulerAngles.z, successZone.localEulerAngles.z));
 
-        if (angleDiff < 15f) // 정중앙 근처 (대성공)
+        if (angleDiff < 10f) // 정중앙 근처 (대성공)
         {
             Debug.Log("PERFECT! 데미지 0");
             onQTEFinished?.Invoke(true);
         }
-        else if (angleDiff < 45f) // 근처 (성공)
+        else if (angleDiff < 35f) // 근처 (성공)
         {
             Debug.Log("GOOD! 데미지 50% 감소");
             // 이 경우 BattleManager에서 데미지를 절반만 입히는 로직을 추가할 수 있습니다.
