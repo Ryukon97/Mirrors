@@ -1,30 +1,32 @@
 using System;
 using System.Collections;
 using UnityEngine;
-using UnityEngine.UI; // UI 사용을 위해 추가
+using UnityEngine.UI;
 
 public class BattleCharacter : MonoBehaviour
 {
-    // --------------- 변수 영역 --------------
     public event Action PlayerHittedEvent;
 
     [Header("Status")]
     [SerializeField] private int maxHp = 100;
     private int currentHp;
 
+    [Header("Damage Settings")] // 데미지 수치 통합 관리
+    [SerializeField] private int normalAttackDamage = 25;
+    [SerializeField] private int skillDamage = 60;        // 스킬 데미지 상향 (기존 30 -> 60)
+    [SerializeField] private int ultimateDamage = 40;     // 궁극기 타당 데미지
+
     [Header("UI")]
-    public Image hpBarImage; // 유니티 인스펙터에서 Filled 타입 이미지를 연결하세요.
+    public Image hpBarImage;
 
     private Vector3 originalPosition;
     private const float ATTACK_DISTANCE = 1.5f;
-    private const float MOVE_SPEED = 15.0f; // 기존 10.0f에서 공격 시퀀스 속도에 맞춰 조정
+    private const float MOVE_SPEED = 15.0f;
 
     public int CurrentHp => currentHp;
 
-    // --------------- Unity Life Cycle --------------
     private void Awake()
     {
-        // Start보다 Awake에서 초기화하는 것이 안전합니다.
         currentHp = maxHp;
     }
 
@@ -34,14 +36,13 @@ public class BattleCharacter : MonoBehaviour
         UpdateHpUI();
     }
 
-    // --------------- public APIs --------------
-
-    // [통합] 공격 시퀀스: 매니저에서 받은 타겟을 정확히 타격
-    public IEnumerator AttackSequence(Enemy target)
+    // ---------------------------------------------------------
+    // [핵심 수정] 공격 시퀀스: 어떤 타입의 공격인지 인자를 추가로 받음
+    // ---------------------------------------------------------
+    public IEnumerator AttackSequence(Enemy target, string attackType = "Normal")
     {
         if (target == null) yield break;
 
-        // 타겟의 위치로 이동 (공격 거리 유지)
         Vector3 targetPos = target.transform.position + (transform.position - target.transform.position).normalized * ATTACK_DISTANCE;
 
         // 1. 이동
@@ -52,9 +53,28 @@ public class BattleCharacter : MonoBehaviour
             yield return null;
         }
 
-        // 2. 타격
-        Debug.Log($"{target.name}을(를) 공격합니다!");
-        target.TakeDamage(25);
+        // 2. 타격 및 데미지 계산
+        // BattleManager에서 하던 데미지 처리를 여기서 한 번만 수행 (중복 방지)
+        int finalDamage = 0;
+        switch (attackType)
+        {
+            case "Skill":
+                finalDamage = skillDamage;
+                Debug.Log($"<color=cyan>[스킬]</color> {target.name}에게 {finalDamage} 데미지!");
+                break;
+            case "Ultimate":
+                finalDamage = ultimateDamage;
+                Debug.Log($"<color=magenta>[궁극기]</color> {target.name}에게 {finalDamage} 데미지!");
+                break;
+            default:
+                finalDamage = normalAttackDamage;
+                Debug.Log($"{target.name}에게 평타 {finalDamage} 데미지!");
+                break;
+        }
+
+        target.TakeDamage(finalDamage);
+
+        // 타격 연출을 위한 짧은 대기
         yield return new WaitForSeconds(0.2f);
 
         // 3. 복귀
@@ -66,33 +86,19 @@ public class BattleCharacter : MonoBehaviour
         transform.position = originalPosition;
     }
 
-    // [통합] 피격 로직: 대미지를 입고 UI와 이벤트를 갱신
     public void TakeDamage(int damage)
     {
         currentHp -= damage;
-        currentHp = Mathf.Max(currentHp, 0); // 체력이 0 미만으로 내려가지 않게 방지
-
+        currentHp = Mathf.Max(currentHp, 0);
         Debug.Log($"<color=red>[플레이어 피격]</color> 현재 체력: {currentHp}");
-
-        // UI 갱신
         UpdateHpUI();
-
-        // 이벤트 호출 (사운드나 이펙트용)
         PlayerHittedEvent?.Invoke();
 
-        if (currentHp <= 0)
-        {
-            Debug.Log("<color=black>플레이어 사망</color>");
-        }
+        if (currentHp <= 0) Debug.Log("<color=black>플레이어 사망</color>");
     }
 
-    // [추가] 체력바 UI 업데이트
     public void UpdateHpUI()
     {
-        if (hpBarImage != null)
-        {
-            // 현재 체력 비율 계산 (0.0 ~ 1.0)
-            hpBarImage.fillAmount = (float)currentHp / maxHp;
-        }
+        if (hpBarImage != null) hpBarImage.fillAmount = (float)currentHp / maxHp;
     }
 }

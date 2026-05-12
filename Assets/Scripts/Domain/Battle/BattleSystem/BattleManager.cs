@@ -87,15 +87,12 @@ public class BattleManager : MonoBehaviour
     {
         CurrentState = EBattleState.Busy;
 
-        // 에러 방지: 타겟을 한 번 더 체크
         CheckTargetHealth();
 
         if (player != null && currentTarget != null)
         {
-            yield return StartCoroutine(player.AttackSequence(currentTarget));
-            currentTarget.TakeDamage(25);
+            yield return StartCoroutine(player.AttackSequence(currentTarget, "Normal"));
 
-            // 평타 시 마나 회복
             GainMana(MANA_REGAIN);
         }
 
@@ -107,22 +104,25 @@ public class BattleManager : MonoBehaviour
     {
         CurrentState = EBattleState.Busy;
 
-        // 마나 소모
+        // 1. 마나 소모 및 UI 갱신
         currentMana -= SKILL_COST;
         UpdateManaUI();
 
-        Debug.Log($"<color=cyan>광역 스킬! 남은 마나: {currentMana}</color>");
+        Debug.Log($"<color=cyan>광역 스킬 시전! 남은 마나: {currentMana}</color>");
 
+        // 2. 적들을 순회하며 한 명씩 공격 연출 수행
+        // enemies 리스트를 복사하여 루프 중 리스트 변경 에러 방지
         List<Enemy> targets = new List<Enemy>(enemies);
+
         foreach (var target in targets)
         {
             if (target != null && target.CurrentHp > 0)
             {
-                yield return StartCoroutine(player.AttackSequence(target));
-                target.TakeDamage(30);
+                yield return StartCoroutine(player.AttackSequence(target, "Skill"));
             }
         }
 
+        // 3. 모든 공격 연출 종료 후 게이지 추가 및 턴 종료
         AddUltimateGauge(GAUGE_PER_ATTACK);
         yield return StartCoroutine(FinishPlayerTurn());
     }
@@ -138,8 +138,8 @@ public class BattleManager : MonoBehaviour
             CheckTargetHealth();
             if (currentTarget == null || player == null) break;
 
-            yield return StartCoroutine(player.AttackSequence(currentTarget));
-            currentTarget.TakeDamage(40);
+            yield return StartCoroutine(player.AttackSequence(currentTarget, "Ultimate"));
+
             yield return new WaitForSeconds(0.2f);
         }
 
