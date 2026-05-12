@@ -20,6 +20,7 @@ public class QuestBookView : MonoBehaviour
     {
         titleDivs = new List<QuestBookTitleDivInstance>();
         detailDivs = new List<QuestBookDetailDivInstance>();
+        questBook.SetActive(false);
         curPoolCnt = 0;
     }
 
