@@ -7,26 +7,31 @@ public class Enemy : MonoBehaviour
 {
     // --------------- 변수 영역 --------------
     [Header("Stats")]
-    [SerializeField] private int maxHp = 200;
-    private int currentHp;
+    // [수정] private -> protected: 자식인 BossEnemy가 현재 체력을 읽고 쓸 수 있어야 합니다.
+    protected int currentHp;
     private Vector3 originalPosition;
 
     private const float ATTACK_DISTANCE = 1.5f;
     private const float MOVE_SPEED = 10.0f;
 
     [Header("UI & Indicators")]
-    public GameObject hpCanvas;           // 머리 위 HP 캔버스
-    public Image hpBarImage;              // HP 게이지 이미지
-    public GameObject selectionUI;        // [변경] 선택 시 보여줄 월드 스페이스 UI 오브젝트
+    public GameObject hpCanvas;
+    public Image hpBarImage;
+    public GameObject selectionUI;
 
-    public int CurrentHp => currentHp;
+    [Header("Base Status")]
+    // [수정] protected: 자식인 BossEnemy가 최대 체력을 읽어 기믹을 발동할 수 있습니다.
+    [SerializeField] protected int maxHp = 100;
+    public int CurrentHp { get; protected set; }
 
     // --------------- Unity Life Cycle --------------
-    private void Awake()
-    {
-        currentHp = maxHp;
 
-        // 시작 시 선택 UI는 꺼둡니다.
+    // [수정] private -> protected virtual: 보스가 이 기능을 '재정의(override)' 할 수 있게 합니다.
+    protected virtual void Awake()
+    {
+        currentHp = maxHp; // 초기 체력 설정
+        CurrentHp = maxHp;
+
         if (selectionUI != null)
         {
             selectionUI.SetActive(false);
@@ -41,7 +46,6 @@ public class Enemy : MonoBehaviour
 
     private void LateUpdate()
     {
-        // 체력바와 선택 UI가 항상 카메라를 정면으로 바라보게 함 (빌보드)
         if (Camera.main != null)
         {
             if (hpCanvas != null)
@@ -73,17 +77,13 @@ public class Enemy : MonoBehaviour
 
             if (isSelected)
             {
-                // [수정] 모델과 겹치지 않게 위치 조정
-                // y는 1.0f(몸통 높이), z는 -0.5f(카메라 쪽으로 살짝 앞)로 설정
                 selectionUI.transform.localPosition = new Vector3(0, 1.0f, -0.5f);
             }
         }
     }
 
-    // [공격 시퀀스] 턴제 적 공격 로직
     public IEnumerator AttackSequence(Transform target, Action<Action<bool>> requestQTE)
     {
-        // 1. 플레이어 앞으로 이동
         Vector3 targetPos = target.position + (transform.position - target.position).normalized * ATTACK_DISTANCE;
 
         while (Vector3.Distance(transform.position, targetPos) > 0.1f)
@@ -92,7 +92,6 @@ public class Enemy : MonoBehaviour
             yield return null;
         }
 
-        // 2. 공격 직전 슬로우 모션 및 QTE 발생
         Time.timeScale = 0.2f;
         Time.fixedDeltaTime = 0.02f * Time.timeScale;
 
@@ -106,11 +105,9 @@ public class Enemy : MonoBehaviour
 
         yield return new WaitUntil(() => qteFinished);
 
-        // 3. 시간 정상화
         Time.timeScale = 1.0f;
         Time.fixedDeltaTime = 0.02f;
 
-        // 4. 대미지 판정
         if (isEvaded)
         {
             Debug.Log($"<color=cyan>[회피 성공]</color>");
@@ -123,7 +120,6 @@ public class Enemy : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
 
-        // 5. 원래 위치로 복귀
         while (Vector3.Distance(transform.position, originalPosition) > 0.1f)
         {
             transform.position = Vector3.MoveTowards(transform.position, originalPosition, MOVE_SPEED * Time.deltaTime);
@@ -136,6 +132,10 @@ public class Enemy : MonoBehaviour
     {
         currentHp -= damage;
         currentHp = Mathf.Max(currentHp, 0);
+
+        // 상위 시스템에서 참조하는 CurrentHp 속성도 동기화
+        CurrentHp = currentHp;
+
         UpdateHpUI();
 
         if (currentHp <= 0)
@@ -147,7 +147,8 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    private void UpdateHpUI()
+    // [수정] private -> protected: 자식이 데미지를 입힌 후 UI를 스스로 갱신할 수 있게 합니다.
+    protected void UpdateHpUI()
     {
         if (hpBarImage != null)
             hpBarImage.fillAmount = (float)currentHp / maxHp;
