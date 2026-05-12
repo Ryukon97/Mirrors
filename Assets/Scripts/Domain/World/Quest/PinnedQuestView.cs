@@ -12,6 +12,8 @@ public class PinnedQuestView : MonoBehaviour
     private void Awake()
     {
         pinnedQuestDatas = new List<QuestData>();
+        for (int i = 0; i < MAX_PIN; i++)
+            pinnedQuests[i].gameObject.SetActive(false);
     }
     private void OnValidate()
     {
