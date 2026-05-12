@@ -16,9 +16,11 @@ public class QuestLoopManager : MonoBehaviour, IQuestLoopManager
             return;
         }
         instance = this;
-        TextControllerManager.OnTextNodeFinished += HandleTextNodeFinished;
     }
-
+    private void Start()
+    {
+        TextControllerManager.Instance.OnTextNodeFinished += HandleTextNodeFinished;
+    }
     // ------------------ public -----------------------
 
     public void AcceptQuest(string qid)
