@@ -39,6 +39,9 @@ public class BattleManager : MonoBehaviour
     public Transform bossSpawnPoint;   // 보스가 나타날 위치
     private bool isBossSpawned = false; // 보스가 이미 소환되었는지 체크
 
+    [Header("Gimmick Settings")]
+    private int totalTurnCount = 0;
+
     private List<BattleUnitOrder> turnTimeline = new List<BattleUnitOrder>();
     private List<GameObject> activeTimelineIcons = new List<GameObject>();
 
@@ -166,6 +169,14 @@ public class BattleManager : MonoBehaviour
 
     private IEnumerator FinishPlayerTurn()
     {
+        totalTurnCount++;
+        Debug.Log($"현재 {totalTurnCount}턴 경과");
+
+        // 5턴마다 강력한 폭격 발생
+        if (totalTurnCount % 5 == 0)
+        {
+            yield return StartCoroutine(BombardmentSequence());
+        }
         if (enemies.Count > 0)
         {
             CycleFinishedUnit();
@@ -176,6 +187,16 @@ public class BattleManager : MonoBehaviour
         {
             CurrentState = EBattleState.Won;
         }
+    }
+    private IEnumerator BombardmentSequence()
+    {
+        Debug.Log("<color=red> 경고: 보스의 지원 폭격이 시작됩니다! </color>");
+        // 화면 흔들기 연출이나 폭발 이펙트를 여기에 추가하세요.
+        yield return new WaitForSeconds(1.0f);
+
+        player.TakeDamage(35); // 일반 공격보다 강한 피해
+        Debug.Log("<color=red>폭발 피해 발생!</color>");
+        yield return new WaitForSeconds(0.5f);
     }
 
     // NullReferenceException 방지를 위한 안전 체크 함수
@@ -268,19 +289,34 @@ public class BattleManager : MonoBehaviour
             // 현재 적이 보스인지 체크
             BossEnemy boss = actingEnemy as BossEnemy;
 
-            if (boss != null && boss.ShouldTriggerEvent())
+            if (boss != null)
             {
-                // 보스 전용 기믹 공격 실행
-                yield return StartCoroutine(boss.DeceptiveQTESequence(player, qteManager.StartQTE));
+                // 1순위: 보스 체력이 50% 이하일 때 발생하는 강제 기믹 공격
+                if (boss.ShouldTriggerEvent())
+                {
+                    yield return StartCoroutine(boss.DeceptiveQTESequence(player, qteManager.StartQTE));
+                }
+                // 2순위: 30% 확률로 반격 자세 취하기
+                else if (UnityEngine.Random.value <= 0.3f)
+                {
+                    Debug.Log("<color=yellow>보스 기믹: 반격 자세 돌입!</color>");
+                    yield return StartCoroutine(boss.CounterStanceSequence());
+                    // 반격 자세를 잡은 후에는 공격하지 않고 턴을 넘깁니다.
+                }
+                // 3순위: 위 조건에 해당하지 않을 때의 일반 공격
+                else
+                {
+                    yield return StartCoroutine(actingEnemy.AttackSequence(player.transform, qteManager.StartQTE));
+                }
             }
             else
             {
-                // 일반 공격
+                // 일반 적의 공격
                 yield return StartCoroutine(actingEnemy.AttackSequence(player.transform, qteManager.StartQTE));
             }
         }
 
-        // 이후 사망 체크 및 턴 종료 로직 (기존과 동일)
+        // 턴 종료 및 상태 체크
         if (player.CurrentHp <= 0)
         {
             CurrentState = EBattleState.Lost;
@@ -371,5 +407,23 @@ public class BattleManager : MonoBehaviour
         // DetermineNextTurn을 부르기 전에 상태를 확실히 PlayerTurn으로 밀어넣음
         stateField.SetValue(this, EBattleState.PlayerTurn);
         DetermineNextTurn();
+    }
+    public void OnWaitButtonClicked()
+    {
+        if (CurrentState != EBattleState.PlayerTurn) return;
+
+        Debug.Log("<color=green>플레이어가 이번 턴을 대기하며 정비합니다.</color>");
+        StartCoroutine(WaitTurnSequence());
+    }
+
+    private IEnumerator WaitTurnSequence()
+    {
+        CurrentState = EBattleState.Busy;
+
+        // 턴을 쉬는 대신 마나나 체력을 아주 조금 회복하는 보너스를 줄 수도 있습니다.
+        currentMana = Mathf.Min(MAX_MANA, currentMana + 5); 
+
+        yield return new WaitForSeconds(0.5f);
+        yield return StartCoroutine(FinishPlayerTurn());
     }
 }

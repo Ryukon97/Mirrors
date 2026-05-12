@@ -14,7 +14,7 @@ public class BattleCharacter : MonoBehaviour
     [Header("Damage Settings")] // 데미지 수치 통합 관리
     [SerializeField] private int normalAttackDamage = 25;
     [SerializeField] private int skillDamage = 60;        // 스킬 데미지 상향 (기존 30 -> 60)
-    [SerializeField] private int ultimateDamage = 40;     // 궁극기 타당 데미지
+    [SerializeField] private int ultimateDamage = 25;     // 궁극기 타당 데미지
 
     [Header("UI")]
     public Image hpBarImage;
