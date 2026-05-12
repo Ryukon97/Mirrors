@@ -25,4 +25,9 @@ public class SelectionTextView : TextView
             selectionTextInstance.tmpros[i].text = text[i];
         }
     }
+
+    public override void UpdateViewOwner(TextController ownerController)
+    {
+
+    }
 }
