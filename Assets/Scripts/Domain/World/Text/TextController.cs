@@ -4,28 +4,25 @@ using UnityEngine;
 
 public class TextController : MonoBehaviour
 {
-    [SerializeField] private DialogueTextView dialoguetextView;
-    [SerializeField] private BalloonTextView balloonTextView;
-    [SerializeField] private SelectionTextView selectionTextView;
+    public string ownerName;
     private TextView curTextView;
     private TextNode textNode;
-    private TextModel textModel;
+    public ETextControllerType controllerType;
+    public string[] Texts { get; private set; }
     public bool IsSelection { get => textNode != null && textNode.node.Count > 1; }
     public event Action<TextNodeFinishedArgs> OnTextNodeFinished;
     private void Awake()
     {
-        textModel = new TextModel(); // 
-        textModel.OnViewRequested += HandleViewRequested;
-        textModel.ChangeText(new string[] {""});
-
-        dialoguetextView.InitView();
-        balloonTextView.InitView();
-        selectionTextView.InitView();
+        Texts = new string[] {""};
     }
 
     // ---------------- public ---------------- 
-    public void ChangeText(string[] texts) => textModel.ChangeText(texts);
-    public void RequestView() => textModel.RequestView();
+    public void ChangeText(string[] texts) => Texts = texts;
+    public void RequestView()
+    {
+        if (curTextView != null)
+            curTextView.UpdateView(Texts);
+    }
     public void HideView()
     {
         if(curTextView != null)
@@ -42,12 +39,12 @@ public class TextController : MonoBehaviour
         SetModelByViewType(textNode.viewType);
         SetViewByViewType(textNode.viewType);
 
-        textModel.RequestView();
+        RequestView();
         return true;
     }
     public void SetAndPlayNode(TextNode textNode)
     {
-        TextControllerManager.Controller = this;
+        TextControllerManager.Instance.Controller = this;
         this.textNode = textNode;
         PlayCurrentNode();
     }
@@ -80,39 +77,20 @@ public class TextController : MonoBehaviour
         {
             case ETextViewType.Balloon:
             case ETextViewType.Dialogue:
-                textModel.ChangeText(new string[] { textNode.node[0].text });
+                ChangeText(new string[] { textNode.node[0].text });
                 break;
             case ETextViewType.Selection:
                 string[] texts = new string[textNode.node.Count];
                 for (int i = 0; i < texts.Length; i++)
                     texts[i] = textNode.node[i].text;
-                textModel.ChangeText(texts);
+                ChangeText(texts);
                 break;
         }
     }
     private void SetViewByViewType(ETextViewType type)
     {
-        switch(type)
-        {
-            case ETextViewType.Balloon:
-                curTextView = balloonTextView;
-                break;
-            case ETextViewType.Dialogue:
-                curTextView = dialoguetextView;
-                break;
-            case ETextViewType.Selection:
-                curTextView = selectionTextView;
-                break;
-        }
-    }
-    private void HandleViewRequested(string[] texts)
-    {
-        if(curTextView != null)
-            curTextView.UpdateView(texts);
-    }
-    private void OnDestroy()
-    {
-        textModel.OnViewRequested -= HandleViewRequested;
+        curTextView = TextControllerManager.Instance.GetView(type);
+        curTextView.UpdateViewOwner(this);
     }
 
 }
