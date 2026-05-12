@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(TextController))]
@@ -23,10 +24,17 @@ public class NPC_Interactable : NPC, IInteractable
 
     async Awaitable PlayNextNodeAuto()
     {
-        do
+        try
         {
-            await Awaitable.WaitForSecondsAsync(2f);    // Todo: ref config SO
-        } while (textController.PlayNextNode());
-        isReady = true;
+            do
+            {
+                await Awaitable.WaitForSecondsAsync(2f);    // Todo: ref config SO
+            } while (textController.PlayNextNode());
+            isReady = true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
     }
 }
