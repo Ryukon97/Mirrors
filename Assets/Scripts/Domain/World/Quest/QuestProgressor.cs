@@ -5,16 +5,18 @@ using UnityEngine;
 
 public class QuestProgressor : MonoBehaviour
 {
-    private QuestData pinnedQuestData;
     private List<QuestData> questDatas;
     private Dictionary<string, List<QuestProgressData>> progressDict;
     QuestConditionCheckService conditionCheckService;
     QuestProgressService questProgressService;
+    [SerializeField] QuestView questView;
 
     private void Awake()
     {
         conditionCheckService = new QuestConditionCheckService();
         questProgressService = new QuestProgressService();
+        questDatas = new List<QuestData>();
+        progressDict = new Dictionary<string, List<QuestProgressData>>();
     }
 
     private void OnEnable()
@@ -26,16 +28,16 @@ public class QuestProgressor : MonoBehaviour
 
     // ------------------- public ----------------
 
-    public void AddQuest(string qid)
+    public void AddQuest(QuestData quest)
     {
-        if (TryGetData(qid, out QuestData quest)) return;
+        string qid = quest.qid;
+        if (TryGetData(qid, out QuestData _)) return;
 
         questDatas.Add(quest);
-        pinnedQuestData = quest;
 
-        // Todo Here: Set Viewer: the new pinned quest
+        questView.AddQuest(quest);
 
-        for(int i = 0; i < quest.conditions.Length; i++)
+        for (int i = 0; i < quest.conditions.Length; i++)
         {
             var origin = quest.conditions[i];
             var current = origin.GetNewProgress();
@@ -52,10 +54,7 @@ public class QuestProgressor : MonoBehaviour
         if (TryGetData(qid, out QuestData quest) == false) return;
         
         questDatas.Remove(quest);
-        if(pinnedQuestData == null)
-        {
-            // Todo Here: Set Viewer: hide pinnedQuest
-        }
+        questView.RemoveQuest(quest); 
         progressDict.Remove(qid);
     }
     public bool IsCompleted(string qid)

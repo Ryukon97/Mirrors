@@ -23,11 +23,9 @@ public class PlayerSubState_PlayNextNode : PlayerSubState_Base
 
     private void OnInteracted(InputAction.CallbackContext obj)
     {
-        if (TextControllerManager.Controller.IsSelection) return;
-
-        bool played = TextControllerManager.Controller.PlayNextNode();
+        bool played = TextControllerManager.Instance.TryPlayNextNode(ETextControllerType.PlayerInput, out bool wasLast);
         Debug.Log("Interacted");
-        if (played == false)
+        if (played == true && wasLast)
         {
             fsm.ChangeState(fsm.normalState);
         }

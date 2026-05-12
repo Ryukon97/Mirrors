@@ -3,14 +3,11 @@ using UnityEngine;
 public class DialogueTextView : TextView
 {
     DialogueTextInstance dialogueTextInstance;
-    [SerializeField] string speakerName;
-
 
     public override void InitView()
     {
         dialogueTextInstance = TextInstancePool.Instance.GetDialogueTextInstance();
         dialogueTextInstance.gameObject.SetActive(false);
-        dialogueTextInstance.speakerTmpro.text = speakerName;
     }
     public override void HideView()
     {
@@ -22,5 +19,10 @@ public class DialogueTextView : TextView
         if (dialogueTextInstance.gameObject.activeSelf == false)
             dialogueTextInstance.gameObject.SetActive(true);
         dialogueTextInstance.contentTmpro.text = text[0];
+    }
+
+    public override void UpdateViewOwner(TextController ownerController)
+    {
+        dialogueTextInstance.speakerTmpro.text = ownerController.ownerName;
     }
 }

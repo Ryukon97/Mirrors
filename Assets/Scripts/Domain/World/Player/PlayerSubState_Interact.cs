@@ -37,7 +37,7 @@ public class PlayerSubState_Interact : PlayerSubState_Base
 		{
 			if (IsInteractReady(interactableLayerMask, player))
 			{
-				target?.Interact();
+				target.Interact();
 				machine.ChangeState(machine.interactingState);
 			}
 		}
@@ -73,6 +73,6 @@ public class PlayerSubState_Interact : PlayerSubState_Base
 		}
 		if (n == 0)
 			target = null;
-		return target != null;
+		return target != null && target.IsReady;
 	}
 }

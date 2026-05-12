@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8591743514280192658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60835b93f91862449979db49d3841727, type: 3}
+  m_Name: TextNode_1
+  m_EditorClassIdentifier: Assembly-CSharp::TextNode
+  viewType: 0
+  prevNode: {fileID: 11400000}
+  isSelection: 0
+  node:
+  - text: 111111111 of the printing andut also the leap into
+    nextNode: {fileID: 3675056381205934433}
+  finishedEvent:
+    type: 0
+    arg1: 
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60835b93f91862449979db49d3841727, type: 3}
+  m_Name: DialogueExample
+  m_EditorClassIdentifier: Assembly-CSharp::TextNode
+  viewType: 2
+  prevNode: {fileID: 0}
+  isSelection: 1
+  node:
+  - text: 'Lorem Ipsum '
+    nextNode: {fileID: -8591743514280192658}
+  - text: 'is simply dummy text '
+    nextNode: {fileID: 3675056381205934433}
+  - text: of the printing andut also the leap into
+    nextNode: {fileID: 5545696488580931371}
+  finishedEvent:
+    type: 0
+    arg1: 
+--- !u!114 &3675056381205934433
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60835b93f91862449979db49d3841727, type: 3}
+  m_Name: TextNode_2
+  m_EditorClassIdentifier: Assembly-CSharp::TextNode
+  viewType: 0
+  prevNode: {fileID: -8591743514280192658}
+  isSelection: 0
+  node:
+  - text: 222222222 of the printing andut also the leap into
+    nextNode: {fileID: 5545696488580931371}
+  finishedEvent:
+    type: 0
+    arg1: 
+--- !u!114 &5545696488580931371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60835b93f91862449979db49d3841727, type: 3}
+  m_Name: TextNode_3
+  m_EditorClassIdentifier: Assembly-CSharp::TextNode
+  viewType: 0
+  prevNode: {fileID: 3675056381205934433}
+  isSelection: 0
+  node:
+  - text: 33333333 of the printing andut also the leap into
+    nextNode: {fileID: 0}
+  finishedEvent:
+    type: 0
+    arg1: 
