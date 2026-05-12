@@ -25,10 +25,9 @@ public class QuestLoopManager : MonoBehaviour, IQuestLoopManager
 
     public void AcceptQuest(string qid)
     {
-        if(questDataContainer.Datas.ContainsKey(qid))
+        if(questDataContainer.Datas.TryGetValue(qid, out var questData))
         {
-            progressor.AddQuest(qid);
-            // add quest on quest book
+            progressor.AddQuest(questData);
         }
         else
         {
@@ -37,7 +36,7 @@ public class QuestLoopManager : MonoBehaviour, IQuestLoopManager
     }
     public bool CheckQuestCompletion(string qid)
     {
-        if(questDataContainer.Datas.TryGetValue(qid, out QuestData quest))
+        if(questDataContainer.Datas.ContainsKey(qid))
         {
             return progressor.IsCompleted(qid);
         }

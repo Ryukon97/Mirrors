@@ -15,6 +15,8 @@ public class QuestProgressor : MonoBehaviour
     {
         conditionCheckService = new QuestConditionCheckService();
         questProgressService = new QuestProgressService();
+        questDatas = new List<QuestData>();
+        progressDict = new Dictionary<string, List<QuestProgressData>>();
     }
 
     private void OnEnable()
@@ -26,9 +28,10 @@ public class QuestProgressor : MonoBehaviour
 
     // ------------------- public ----------------
 
-    public void AddQuest(string qid)
+    public void AddQuest(QuestData quest)
     {
-        if (TryGetData(qid, out QuestData quest)) return;
+        string qid = quest.qid;
+        if (TryGetData(qid, out QuestData _)) return;
 
         questDatas.Add(quest);
 
