@@ -22,7 +22,7 @@ public class PlayerState_Attack : PlayerState_Base
             state.OnUpdate(this, player);
         if(Time.time - enteredT > attackDuration)
         {
-            // Todo: change to normal
+            machine.ChangeState(machine.normalState);
         }
     }
     public override void OnExit()
