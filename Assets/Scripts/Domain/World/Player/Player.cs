@@ -4,7 +4,6 @@ using UnityEngine.VFX;
 public class Player : MonoBehaviour
 {
     public Transform camTarget;
-    public Transform forwardCamTarget;
     public Transform playerBody;
     public CharacterController controller;
 
