@@ -1,11 +1,13 @@
 using UnityEngine;
+using UnityEngine.VFX;
 
 public class Player : MonoBehaviour
 {
     public Transform camTarget;
-    public Transform forwardCamTarget;
     public Transform playerBody;
     public CharacterController controller;
+
+    public VisualEffect AttackEffect;
 
     public float mouseSenceX;
     public float mouseSenceY;

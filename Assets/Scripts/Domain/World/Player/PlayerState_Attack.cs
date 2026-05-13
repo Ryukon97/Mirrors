@@ -4,7 +4,7 @@ using UnityEngine;
 public class PlayerState_Attack : PlayerState_Base
 {
     float enteredT;
-    const float attackDuration = 1f;    // 
+    const float attackDuration = .4f;    // 
     public PlayerState_Attack(PlayerStateMachine machine, Player player
         , PlayerSubState_Base[] subStates) : base(machine, player, subStates)
     {
@@ -22,7 +22,7 @@ public class PlayerState_Attack : PlayerState_Base
             state.OnUpdate(this, player);
         if(Time.time - enteredT > attackDuration)
         {
-            // Todo: change to normal
+            machine.ChangeState(machine.normalState);
         }
     }
     public override void OnExit()

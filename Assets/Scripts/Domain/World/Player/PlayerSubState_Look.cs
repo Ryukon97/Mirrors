@@ -29,7 +29,6 @@ public class PlayerSubState_Look : PlayerSubState_Base
 
 		// 2. Apply once using a single Quaternion
 		player.camTarget.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
-		player.forwardCamTarget.localRotation = Quaternion.Euler(0, yRotation, 0f);
 	}
 
 	public override void OnExit(PlayerState_Base baseState, Player player)
