@@ -84,6 +84,12 @@ public class BattleManager : MonoBehaviour
         StartCoroutine(UltimateThreeHitSequence());
     }
 
+    public void OnWaitButtonClicked()
+    {
+        if (CurrentState != EBattleState.PlayerTurn) return;
+        StartCoroutine(WaitTurnSequence());
+    }
+
     // --------------- 핵심 전투 로직 ------------------
 
     public List<Enemy> GetEnemies()
@@ -98,17 +104,22 @@ public class BattleManager : MonoBehaviour
 
         if (player != null && currentTarget != null)
         {
-            // [중요] 연출 코루틴 실행
+            // [연출] 이동 및 애니메이션 (데미지 로직 중복 방지를 위해 캐릭터 내부 TakeDamage는 삭제 필수)
             yield return StartCoroutine(player.AttackSequence(currentTarget, "Normal"));
 
-            // 연출 내에서 타격 타이밍에 맞춰 데미지를 주고 싶다면 
-            // AttackSequence 내부의 적절한 시간 뒤에 아래 코드를 실행하거나, 
-            // 현재 구조(캐릭터가 적에게 이동 완료) 이후에 데미지를 줍니다.
             if (currentTarget != null)
             {
                 BossEnemy boss = currentTarget as BossEnemy;
-                if (boss != null && boss.isCounterMode) boss.ExecuteCounter(player);
-                else currentTarget.TakeDamage(25); // normalAttackDamage
+                // 반격 모드 체크 후 데미지 처리
+                if (boss != null && boss.isCounterMode)
+                {
+                    boss.ExecuteCounter(player);
+                }
+                else
+                {
+                    // [경고 해결] player의 변수를 참조
+                    currentTarget.TakeDamage(player.NormalAttackDamage);
+                }
             }
 
             GainMana(MANA_REGAIN);
@@ -126,11 +137,10 @@ public class BattleManager : MonoBehaviour
 
         List<Enemy> targets = GetEnemies();
 
-        // 1. 캐릭터 연출 시작 (BattleCharacter.cs의 AttackSequence 호출)
-        // 연출용 캐릭터 스킬 시퀀스를 실행합니다.
+        // 1. 캐릭터 시전 연출 시작
         Coroutine skillRoutine = StartCoroutine(player.AttackSequence(targets.Count > 0 ? targets[0] : null, "Skill"));
 
-        // 2. 캐릭터 코드의 연출 타이밍(0.6초)에 맞춰 데미지 처리
+        // 2. 캐릭터 코드의 타격 타이밍(0.6초)에 맞춰 데미지 일괄 처리
         yield return new WaitForSeconds(0.6f);
 
         foreach (var e in targets)
@@ -144,11 +154,15 @@ public class BattleManager : MonoBehaviour
             }
             else
             {
+                // [경고 해결] player의 변수를 참조
                 e.TakeDamage(player.SkillDamage);
             }
         }
-        yield return skillRoutine;
 
+        // [복구] 스킬 사용 시에도 궁극기 게이지 추가
+        AddUltimateGauge(GAUGE_PER_ATTACK);
+
+        yield return skillRoutine;
         yield return StartCoroutine(FinishPlayerTurn());
     }
 
@@ -163,13 +177,14 @@ public class BattleManager : MonoBehaviour
             CheckTargetHealth();
             if (currentTarget == null || player == null) break;
 
-            // 연출 실행
+            // 1. 연출 실행 (BattleCharacter는 시각적 효과만 담당)
             yield return StartCoroutine(player.AttackSequence(currentTarget, "Ultimate"));
 
-            // 이동 후 타격 시점에 데미지 (이동 시간 대략 고려)
+            // 2. 연출 타이밍에 맞춰 실제 데미지 1회 적용 (중복 방지)
             if (currentTarget != null)
             {
-                currentTarget.TakeDamage(25); // ultimateDamage
+                // [경고 해결] player.UltimateDamage 참조
+                currentTarget.TakeDamage(player.UltimateDamage);
             }
 
             yield return new WaitForSeconds(0.2f);
@@ -178,7 +193,36 @@ public class BattleManager : MonoBehaviour
         yield return StartCoroutine(FinishPlayerTurn());
     }
 
-    // --------------- 보조 및 관리 로직 ------------------
+    private IEnumerator WaitTurnSequence()
+    {
+        CurrentState = EBattleState.Busy;
+        Debug.Log("<color=yellow>대기: 반격 자세 파훼 및 재정비</color>");
+
+        // 1. 모든 보스의 반격 자세 강제 해제 (시각적 효과 포함)
+        Enemy[] allActiveEnemies = FindObjectsByType<Enemy>(FindObjectsInactive.Exclude);
+        foreach (var e in allActiveEnemies)
+        {
+            if (e is BossEnemy boss)
+            {
+                // BossEnemy에 추가한 DisableCounterMode 호출 (색상 복구 포함)
+                boss.DisableCounterMode();
+            }
+        }
+
+        // 2. 체력 10% 회복
+        int healAmount = Mathf.RoundToInt(player.MaxHp * 0.1f);
+        player.Heal(healAmount);
+
+        // 3. 마나 보너스
+        currentMana = Mathf.Min(MAX_MANA, currentMana + 5);
+        UpdateManaUI();
+
+        yield return new WaitForSeconds(0.5f);
+
+        yield return StartCoroutine(FinishPlayerTurn());
+    }
+
+    // --------------- 보조 및 관리 로직 (기존 유지) ------------------
 
     private void GainMana(int amount)
     {
@@ -198,12 +242,7 @@ public class BattleManager : MonoBehaviour
     private IEnumerator FinishPlayerTurn()
     {
         totalTurnCount++;
-        Debug.Log($"현재 {totalTurnCount}턴 경과");
-
-        if (totalTurnCount % 5 == 0)
-        {
-            yield return StartCoroutine(BombardmentSequence());
-        }
+        if (totalTurnCount % 5 == 0) yield return StartCoroutine(BombardmentSequence());
 
         if (enemies.Count > 0)
         {
@@ -213,7 +252,6 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            // 적이 없는 경우 승리 판정은 RemoveEnemy에서 처리하거나 여기서 마무리
             var field = typeof(BattleManager).GetProperty("CurrentState");
             field.SetValue(this, EBattleState.Won);
         }
@@ -221,7 +259,7 @@ public class BattleManager : MonoBehaviour
 
     private IEnumerator BombardmentSequence()
     {
-        Debug.Log("<color=red> 경고: 보스의 지원 폭격이 시작됩니다! </color>");
+        Debug.Log("<color=red> 경고: 지원 폭격! </color>");
         yield return new WaitForSeconds(1.0f);
         player.TakeDamage(35);
         yield return new WaitForSeconds(0.5f);
@@ -239,38 +277,26 @@ public class BattleManager : MonoBehaviour
     {
         if (enemies.Contains(deadEnemy)) enemies.Remove(deadEnemy);
         turnTimeline.RemoveAll(unit => unit.enemyReference == deadEnemy);
-
         if (currentTarget == deadEnemy) currentTarget = null;
 
         UpdateTimelineUI();
 
         if (enemies.Count == 0)
         {
-            if (bossPrefab != null && !isBossSpawned)
+            if (bossPrefab != null && !isBossSpawned) StartCoroutine(SpawnBossSequence());
+            else
             {
-                StartCoroutine(SpawnBossSequence());
-            }
-            else if (isBossSpawned || bossPrefab == null)
-            {
-                Debug.Log("<color=yellow>모든 적 처치! 승리 상태로 전환합니다.</color>");
                 StopAllCoroutines();
                 var field = typeof(BattleManager).GetProperty("CurrentState");
                 field.SetValue(this, EBattleState.Won);
             }
         }
-        else
-        {
-            AutoTargetNext();
-        }
+        else AutoTargetNext();
     }
 
     private void AutoTargetNext()
     {
-        if (enemies == null || enemies.Count == 0)
-        {
-            currentTarget = null;
-            return;
-        }
+        if (enemies == null || enemies.Count == 0) { currentTarget = null; return; }
         currentTarget = enemies.Find(e => e != null && e.gameObject != null && e.CurrentHp > 0);
         if (currentTarget != null) currentTarget.SetSelection(true);
     }
@@ -303,19 +329,11 @@ public class BattleManager : MonoBehaviour
                 else if (UnityEngine.Random.value <= 0.3f) yield return StartCoroutine(boss.CounterStanceSequence());
                 else yield return StartCoroutine(actingEnemy.AttackSequence(player.transform, qteManager.StartQTE));
             }
-            else
-            {
-                yield return StartCoroutine(actingEnemy.AttackSequence(player.transform, qteManager.StartQTE));
-            }
+            else yield return StartCoroutine(actingEnemy.AttackSequence(player.transform, qteManager.StartQTE));
         }
 
         if (player.CurrentHp <= 0) CurrentState = EBattleState.Lost;
-        else
-        {
-            CycleFinishedUnit();
-            yield return new WaitForSeconds(0.5f);
-            DetermineNextTurn();
-        }
+        else { CycleFinishedUnit(); yield return new WaitForSeconds(0.5f); DetermineNextTurn(); }
     }
 
     private void InitializeTimeline()
@@ -366,8 +384,6 @@ public class BattleManager : MonoBehaviour
         var stateField = typeof(BattleManager).GetProperty("CurrentState");
         stateField.SetValue(this, EBattleState.Busy);
         isBossSpawned = true;
-
-        Debug.Log("<color=red>모든 적을 처치하자 거대한 기운이 나타납니다...</color>");
         yield return new WaitForSeconds(1.5f);
 
         if (bossPrefab != null)
@@ -388,19 +404,5 @@ public class BattleManager : MonoBehaviour
         yield return new WaitForSeconds(1.0f);
         stateField.SetValue(this, EBattleState.PlayerTurn);
         DetermineNextTurn();
-    }
-
-    public void OnWaitButtonClicked()
-    {
-        if (CurrentState != EBattleState.PlayerTurn) return;
-        StartCoroutine(WaitTurnSequence());
-    }
-
-    private IEnumerator WaitTurnSequence()
-    {
-        CurrentState = EBattleState.Busy;
-        currentMana = Mathf.Min(MAX_MANA, currentMana + 5);
-        yield return new WaitForSeconds(0.5f);
-        yield return StartCoroutine(FinishPlayerTurn());
     }
 }

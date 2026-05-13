@@ -32,7 +32,9 @@ public class BattleCharacter : MonoBehaviour
     private bool isAttacking = false;
     public int MaxHp => maxHp;
     public int CurrentHp => currentHp;
+    public int NormalAttackDamage => normalAttackDamage;    
     public int SkillDamage => skillDamage;
+    public int UltimateDamage => ultimateDamage;
 
     private void Awake()
     {
@@ -68,76 +70,58 @@ public class BattleCharacter : MonoBehaviour
         // --- [광역 스킬(Skill) 처리] ---
         if (attackType == "Skill")
         {
-            Debug.Log("<color=cyan>[광역 스킬 시전]</color>");
-
-            // 1. 캐릭터 제자리 시전 연출 (여기서는 데미지 안 들어감)
             if (skillCastEffectPrefab != null)
             {
                 GameObject castEffect = Instantiate(skillCastEffectPrefab, transform.position, Quaternion.identity);
                 Destroy(castEffect, 2.0f);
             }
 
-            // 시전 연출을 위한 대기 시간 (이 시간이 지난 후 타격)
+            // 0.6초 동안 시전 애니메이션/이펙트 연출 (데미지는 BattleManager가 이 시간에 맞춰서 줄 것임)
             yield return new WaitForSeconds(0.6f);
 
-            // 2. 적 타격 연출 및 실제 데미지 판정
+            // 타격 이펙트만 생성
             List<Enemy> allEnemies = BattleManager.Instance.GetEnemies();
-            if (allEnemies != null)
+            foreach (var enemy in allEnemies)
             {
-                foreach (var enemy in allEnemies)
+                if (enemy == null || enemy.CurrentHp <= 0) continue;
+                if (skillHitEffectPrefab != null)
                 {
-                    if (enemy == null || enemy.CurrentHp <= 0) continue;
-
-                    // [타격 이펙트 생성]
-                    if (skillHitEffectPrefab != null)
-                    {
-                        GameObject hitEffect = Instantiate(skillHitEffectPrefab, enemy.transform.position + Vector3.up * 0.5f, Quaternion.identity);
-                        Destroy(hitEffect, 1.5f);
-                    }
-
-                    // [데미지 적용] 타격 이펙트가 생성되는 이 시점에 데미지를 줍니다.
-                    BossEnemy boss = enemy as BossEnemy;
-                    if (boss != null && boss.isCounterMode)
-                    {
-                        boss.ExecuteCounter(this);
-                    }
+                    GameObject hitEffect = Instantiate(skillHitEffectPrefab, enemy.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                    Destroy(hitEffect, 1.5f);
                 }
             }
-
             yield return new WaitForSeconds(0.4f);
-            isAttacking = false;
-            yield break;
         }
-
         // --- [일반 공격 및 궁극기 처리] ---
-        // (이동 후 타격 이펙트 생성 시점에 TakeDamage가 호출되도록 기존 로직 유지)
-        Vector3 targetPos = target.transform.position + (transform.position - target.transform.position).normalized * ATTACK_DISTANCE;
-
-        while (Vector3.Distance(transform.position, targetPos) > 0.1f)
+        else
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, MOVE_SPEED * Time.deltaTime);
-            yield return null;
+            Vector3 targetPos = target.transform.position + (transform.position - target.transform.position).normalized * ATTACK_DISTANCE;
+
+            // 적에게 이동
+            while (Vector3.Distance(transform.position, targetPos) > 0.1f)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, targetPos, MOVE_SPEED * Time.deltaTime);
+                yield return null;
+            }
+
+            // 적에게 닿았을 때 이펙트만 출력 (여기서 TakeDamage를 삭제!)
+            if (hitEffectPrefab != null)
+            {
+                GameObject effect = Instantiate(hitEffectPrefab, target.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                Destroy(effect, 1.5f);
+            }
+
+            yield return new WaitForSeconds(0.3f);
+
+            // 원래 위치로 복귀
+            while (Vector3.Distance(transform.position, originalPosition) > 0.1f)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, originalPosition, MOVE_SPEED * Time.deltaTime);
+                yield return null;
+            }
+            transform.position = originalPosition;
         }
 
-        // 적에게 닿았을 때 이펙트 출력 및 데미지
-        if (hitEffectPrefab != null)
-        {
-            GameObject effect = Instantiate(hitEffectPrefab, target.transform.position + Vector3.up * 0.5f, Quaternion.identity);
-            Destroy(effect, 1.5f);
-        }
-
-        BossEnemy singleBoss = target as BossEnemy;
-        if (singleBoss != null && singleBoss.isCounterMode) singleBoss.ExecuteCounter(this);
-        else target.TakeDamage((attackType == "Ultimate") ? ultimateDamage : normalAttackDamage);
-
-        yield return new WaitForSeconds(0.3f);
-
-        while (Vector3.Distance(transform.position, originalPosition) > 0.1f)
-        {
-            transform.position = Vector3.MoveTowards(transform.position, originalPosition, MOVE_SPEED * Time.deltaTime);
-            yield return null;
-        }
-        transform.position = originalPosition;
         isAttacking = false;
     }
 
