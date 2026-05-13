@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,20 +14,27 @@ public class BattleCharacter : MonoBehaviour
 
     [Header("Damage Settings")] // 데미지 수치 통합 관리
     [SerializeField] private int normalAttackDamage = 25;
-    [SerializeField] private int skillDamage = 60;        // 스킬 데미지 상향 (기존 30 -> 60)
+    [SerializeField] private int skillDamage = 40;        // 스킬 데미지 상향 (기존 30 -> 60)
     [SerializeField] private int ultimateDamage = 25;     // 궁극기 타당 데미지
 
     [Header("UI")]
     public Image hpBarImage;
 
     [Header("Effects")]
-    public GameObject hitEffectPrefab;
+    public GameObject hitEffectPrefab;      // 일반 타격 이펙트
+    public GameObject skillCastEffectPrefab; // [추가] 스킬 시전 시 캐릭터에게 나올 이펙트
+    public GameObject skillHitEffectPrefab;  // [추가] 스킬 타격 시 적들에게 터질 이펙트
 
     private Vector3 originalPosition;
     private const float ATTACK_DISTANCE = 1.5f;
     private const float MOVE_SPEED = 15.0f;
 
+    private bool isAttacking = false;
+    public int MaxHp => maxHp;
     public int CurrentHp => currentHp;
+    public int NormalAttackDamage => normalAttackDamage;    
+    public int SkillDamage => skillDamage;
+    public int UltimateDamage => ultimateDamage;
 
     private void Awake()
     {
@@ -35,84 +43,86 @@ public class BattleCharacter : MonoBehaviour
 
     private void Start()
     {
+        currentHp = maxHp;
         originalPosition = transform.position;
         UpdateHpUI();
     }
+    public void Heal(int amount)
+    {
+        currentHp += amount;
 
+        // 최대 체력을 넘지 않도록 제한
+        if (currentHp > maxHp) currentHp = maxHp;
+
+        Debug.Log($"<color=green>[Heal]</color> {amount} 회복! (현재: {currentHp}/{maxHp})");
+
+        // HP UI 업데이트 (기존 메서드 호출)
+        UpdateHpUI();
+    }
     // ---------------------------------------------------------
     // [핵심 수정] 공격 시퀀스: 어떤 타입의 공격인지 인자를 추가로 받음
     // ---------------------------------------------------------
     public IEnumerator AttackSequence(Enemy target, string attackType = "Normal")
     {
-        if (target == null) yield break;
+        if (isAttacking) yield break;
+        isAttacking = true;
 
-        // 공격 위치 계산
-        Vector3 targetPos = target.transform.position + (transform.position - target.transform.position).normalized * ATTACK_DISTANCE;
-
-        // 1. 적에게 이동
-        while (Vector3.Distance(transform.position, targetPos) > 0.1f)
+        // --- [광역 스킬(Skill) 처리] ---
+        if (attackType == "Skill")
         {
-            if (target == null) { transform.position = originalPosition; yield break; }
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, MOVE_SPEED * Time.deltaTime);
-            yield return null;
+            if (skillCastEffectPrefab != null)
+            {
+                GameObject castEffect = Instantiate(skillCastEffectPrefab, transform.position, Quaternion.identity);
+                Destroy(castEffect, 2.0f);
+            }
+
+            // 0.6초 동안 시전 애니메이션/이펙트 연출 (데미지는 BattleManager가 이 시간에 맞춰서 줄 것임)
+            yield return new WaitForSeconds(0.6f);
+
+            // 타격 이펙트만 생성
+            List<Enemy> allEnemies = BattleManager.Instance.GetEnemies();
+            foreach (var enemy in allEnemies)
+            {
+                if (enemy == null || enemy.CurrentHp <= 0) continue;
+                if (skillHitEffectPrefab != null)
+                {
+                    GameObject hitEffect = Instantiate(skillHitEffectPrefab, enemy.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                    Destroy(hitEffect, 1.5f);
+                }
+            }
+            yield return new WaitForSeconds(0.4f);
         }
-
-        // --- [2. 타격 시점: 이펙트 생성 및 데미지 계산] ---
-
-        // [이펙트 처리] 적에게 닿은 순간 생성하고 캐릭터의 자식으로 설정하여 함께 이동하게 함
-        if (hitEffectPrefab != null)
-        {
-            // 적의 위치에 생성
-            GameObject effect = Instantiate(hitEffectPrefab, target.transform.position + Vector3.up * 0.5f, Quaternion.identity);
-
-            // 이펙트가 캐릭터를 따라다니게 함 (복귀 시 함께 이동)
-            effect.transform.SetParent(this.transform);
-
-            // 이펙트가 무한히 남지 않도록 1.5초 뒤 삭제
-            Destroy(effect, 1.5f);
-        }
-
-        // [데미지 및 반격 처리]
-        BossEnemy boss = target as BossEnemy;
-
-        // 만약 보스가 반격 모드라면?
-        if (boss != null && boss.isCounterMode)
-        {
-            // 반격 발동 (BattleManager에서 설정한 2배 데미지 로직 실행)
-            boss.ExecuteCounter(this);
-        }
+        // --- [일반 공격 및 궁극기 처리] ---
         else
         {
-            // 반격 모드가 아닐 때만 정상 데미지 계산
-            int finalDamage = 0;
-            switch (attackType)
+            Vector3 targetPos = target.transform.position + (transform.position - target.transform.position).normalized * ATTACK_DISTANCE;
+
+            // 적에게 이동
+            while (Vector3.Distance(transform.position, targetPos) > 0.1f)
             {
-                case "Skill":
-                    finalDamage = skillDamage;
-                    Debug.Log($"<color=cyan>[스킬]</color> {target.name}에게 {finalDamage} 데미지!");
-                    break;
-                case "Ultimate":
-                    finalDamage = ultimateDamage;
-                    Debug.Log($"<color=magenta>[궁극기]</color> {target.name}에게 {finalDamage} 데미지!");
-                    break;
-                default:
-                    finalDamage = normalAttackDamage;
-                    Debug.Log($"{target.name}에게 평타 {finalDamage} 데미지!");
-                    break;
+                transform.position = Vector3.MoveTowards(transform.position, targetPos, MOVE_SPEED * Time.deltaTime);
+                yield return null;
             }
-            target.TakeDamage(finalDamage);
+
+            // 적에게 닿았을 때 이펙트만 출력 (여기서 TakeDamage를 삭제!)
+            if (hitEffectPrefab != null)
+            {
+                GameObject effect = Instantiate(hitEffectPrefab, target.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                Destroy(effect, 1.5f);
+            }
+
+            yield return new WaitForSeconds(0.3f);
+
+            // 원래 위치로 복귀
+            while (Vector3.Distance(transform.position, originalPosition) > 0.1f)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, originalPosition, MOVE_SPEED * Time.deltaTime);
+                yield return null;
+            }
+            transform.position = originalPosition;
         }
 
-        // 타격 연출을 위한 짧은 대기 (역경직)
-        yield return new WaitForSeconds(0.2f);
-
-        // 3. 원래 위치로 복귀 (이펙트가 자식으로 설정되어 있어 함께 이동함)
-        while (Vector3.Distance(transform.position, originalPosition) > 0.1f)
-        {
-            transform.position = Vector3.MoveTowards(transform.position, originalPosition, MOVE_SPEED * Time.deltaTime);
-            yield return null;
-        }
-        transform.position = originalPosition;
+        isAttacking = false;
     }
 
     public void TakeDamage(int damage)
