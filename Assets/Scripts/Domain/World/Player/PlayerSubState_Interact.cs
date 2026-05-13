@@ -3,7 +3,9 @@ using UnityEngine.InputSystem;
 
 public class PlayerSubState_Interact : PlayerSubState_Base
 {
-	LayerMask interactableLayerMask;
+	const float INTERACT_RADIUS = 2f;
+    const float INTERACT_REACH = 2f;
+    LayerMask interactableLayerMask;
 	bool interactHovering;
 	IInteractable target;
 
@@ -18,13 +20,11 @@ public class PlayerSubState_Interact : PlayerSubState_Base
 	public override void OnEnter(PlayerState_Base baseState, Player player)
 	{
 		interactHovering = false;
-        Debug.Log("Interact Out");
     }
 
     public override void OnExit(PlayerState_Base baseState, Player player)
     {
-        // turn off interact hover ui
-        Debug.Log("Interact Out");
+        InteractHoverPopupView.Hide();
     }
 
     public override void OnUpdate(PlayerState_Base baseState, Player player)
@@ -47,8 +47,7 @@ public class PlayerSubState_Interact : PlayerSubState_Base
 			{
 				if (interactHovering == false)
 				{
-					Debug.Log("Interact Hovered");
-					// turn on interact hover ui
+					InteractHoverPopupView.Show();
 				}
 				interactHovering = true;
 			}
@@ -56,8 +55,7 @@ public class PlayerSubState_Interact : PlayerSubState_Base
 			{
 				if (interactHovering == true)
                 {
-                    Debug.Log("Interact Out");
-                    // turn off interact hover ui
+                    InteractHoverPopupView.Hide();
                 }
 				interactHovering = false;
 			}
@@ -66,7 +64,7 @@ public class PlayerSubState_Interact : PlayerSubState_Base
 
 	bool IsInteractReady(LayerMask layerMask, Player player)
 	{
-		int n = Physics.OverlapBoxNonAlloc(player.forwardCamTarget.position, new Vector3(2f, 2f, 2f), overlapedColliders, player.forwardCamTarget.rotation, layerMask);
+		int n = Physics.OverlapSphereNonAlloc(player.camTarget.position + player.camTarget.forward * INTERACT_REACH, INTERACT_RADIUS, overlapedColliders, layerMask);
 		for(int i = 0; i < n; i++)
 		{
 			target = overlapedColliders[i].gameObject.GetComponent<IInteractable>();
