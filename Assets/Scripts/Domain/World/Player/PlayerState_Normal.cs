@@ -4,10 +4,10 @@ using UnityEngine.InputSystem;
 
 public class PlayerState_Normal : PlayerState_Base
 {
-    const int MAX_ATTACK_TARGET = 3;   // max target per attack
+    const int MAX_ATTACK_TARGET = 3;
     const float ATTACK_RANGE = 3f;
     const float ATTACK_RADIUS = 2.2f;
-    Collider[] overlapedTargetedColliders = new Collider[MAX_ATTACK_TARGET];    // max interact target always 1.
+    Collider[] overlapedTargetedColliders = new Collider[MAX_ATTACK_TARGET];
 
     LayerMask destroyableLayer;
 
