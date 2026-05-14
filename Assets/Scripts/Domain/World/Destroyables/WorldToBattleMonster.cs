@@ -1,9 +1,14 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class WorldToBattleMonster : MonoBehaviour, IDestroyable
 {
-    public bool IsReady { get; set; }
-    
+    [SerializeField] string battleSceneName;
+    public bool IsReady { get; private set; }
+    private void Awake()
+    {
+        IsReady = true;
+    }
     public void TryDestroy()
     {
         GoBattleScene(earlyAttacked: true);
@@ -12,9 +17,13 @@ public class WorldToBattleMonster : MonoBehaviour, IDestroyable
     void GoBattleScene(bool earlyAttacked)
     {
         IsReady = false;
-        Debug.Log($"World To Battle, earlyAttacked: {earlyAttacked} ");
 
-        // load scene 
+        W2BContextDeliver.Instance.Context.EarlyStriked = earlyAttacked;
+
+        if (FadeInOutManager.Instance != null)
+            _ = FadeInOutManager.Instance.DoSomethingBtwFadingAsync(() => SceneManager.LoadScene(battleSceneName));
+        else
+            SceneManager.LoadScene(battleSceneName);
     }
 
     private void OnTriggerEnter(Collider other)
