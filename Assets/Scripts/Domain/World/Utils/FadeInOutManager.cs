@@ -28,6 +28,7 @@ public class FadeInOutManager : MonoBehaviour
     // 기다려야한다면 await DoSomething...Async() 과 같이 사용하세요. 
     public async Awaitable DoSomethingBtwFadingAsync(Action something)
     {
+        if (fadeImg.gameObject.activeSelf) return;
         try
         {
             fadeImg.gameObject.SetActive(true);
