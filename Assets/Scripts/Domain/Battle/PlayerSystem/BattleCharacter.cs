@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class BattleCharacter : MonoBehaviour
 {
     public event Action PlayerHittedEvent;
+    private Animator anim;
 
     [Header("Status")]
     [SerializeField] private int maxHp = 100;
@@ -39,6 +40,7 @@ public class BattleCharacter : MonoBehaviour
     private void Awake()
     {
         currentHp = maxHp;
+        anim = GetComponent<Animator>();
     }
 
     private void Start()
@@ -67,19 +69,26 @@ public class BattleCharacter : MonoBehaviour
         if (isAttacking) yield break;
         isAttacking = true;
 
+        // 공격 시작 전 적을 향해 회전 (모든 공격 공통)
+        if (target != null)
+        {
+            Vector3 targetDirection = new Vector3(target.transform.position.x, transform.position.y, target.transform.position.z);
+            transform.LookAt(targetDirection);
+        }
+
         // --- [광역 스킬(Skill) 처리] ---
         if (attackType == "Skill")
         {
+            // ※ 스킬 애니메이션이 없으므로 SetBool("Attack", true)를 호출하지 않습니다.
+
             if (skillCastEffectPrefab != null)
             {
                 GameObject castEffect = Instantiate(skillCastEffectPrefab, transform.position, Quaternion.identity);
                 Destroy(castEffect, 2.0f);
             }
 
-            // 0.6초 동안 시전 애니메이션/이펙트 연출 (데미지는 BattleManager가 이 시간에 맞춰서 줄 것임)
             yield return new WaitForSeconds(0.6f);
 
-            // 타격 이펙트만 생성
             List<Enemy> allEnemies = BattleManager.Instance.GetEnemies();
             foreach (var enemy in allEnemies)
             {
@@ -95,17 +104,13 @@ public class BattleCharacter : MonoBehaviour
         // --- [일반 공격 및 궁극기 처리] ---
         else
         {
-            Vector3 targetPos = target.transform.position + (transform.position - target.transform.position).normalized * ATTACK_DISTANCE;
+            // 1. 일반 공격/궁극기일 때만 애니메이션 시작
+            if (anim != null) anim.SetBool("Attack", true);
 
-            // 적에게 이동
-            while (Vector3.Distance(transform.position, targetPos) > 0.1f)
-            {
-                transform.position = Vector3.MoveTowards(transform.position, targetPos, MOVE_SPEED * Time.deltaTime);
-                yield return null;
-            }
+            // 애니메이션 상에서 타격이 이루어지는 타이밍까지 대기
+            yield return new WaitForSeconds(1.6f);
 
-            // 적에게 닿았을 때 이펙트만 출력 (여기서 TakeDamage를 삭제!)
-            if (hitEffectPrefab != null)
+            if (hitEffectPrefab != null && target != null)
             {
                 GameObject effect = Instantiate(hitEffectPrefab, target.transform.position + Vector3.up * 0.5f, Quaternion.identity);
                 Destroy(effect, 1.5f);
@@ -113,15 +118,14 @@ public class BattleCharacter : MonoBehaviour
 
             yield return new WaitForSeconds(0.3f);
 
-            // 원래 위치로 복귀
-            while (Vector3.Distance(transform.position, originalPosition) > 0.1f)
-            {
-                transform.position = Vector3.MoveTowards(transform.position, originalPosition, MOVE_SPEED * Time.deltaTime);
-                yield return null;
-            }
-            transform.position = originalPosition;
+            // 2. 애니메이션 종료 (Idle로 복귀)
+            if (anim != null) anim.SetBool("Attack", false);
         }
 
+        // 애니메이션 내의 루트 모션으로 인해 좌표가 변했다면 원래 자리로 초기화
+        transform.position = originalPosition;
+
+        yield return new WaitForSeconds(0.2f);
         isAttacking = false;
     }
 
