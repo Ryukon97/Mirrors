@@ -54,6 +54,9 @@ public class BattleSceneLoader : MonoBehaviour
         Debug.Log($"<color=magenta><b>[Debug]</b> 최종 전투 종료 후 씬 이동 시도 (대상: {mainSceneName})</color>");
 
         // 실제 씬 이동 활성화 (주석을 해제하면 작동합니다)
-        // SceneManager.LoadScene(mainSceneName); 
+        if (FadeInOutManager.Instance != null)
+            _ = FadeInOutManager.Instance.DoSomethingBtwFadingAsync(() => SceneManager.LoadScene("World"));
+        else
+            SceneManager.LoadScene("World");
     }
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.InputSystem; // [추가] 신형 입력 시스템 네임스페이스
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class PauseManager : MonoBehaviour
 {
@@ -53,6 +54,9 @@ public class PauseManager : MonoBehaviour
     {
         Debug.Log("메인 메뉴로 이동");
         Time.timeScale = 1f;
-        // SceneManager.LoadScene("MainScene");
+        if (FadeInOutManager.Instance != null)
+            _ = FadeInOutManager.Instance.DoSomethingBtwFadingAsync(() => SceneManager.LoadScene("World"));
+        else
+            SceneManager.LoadScene("World");
     }
 }
