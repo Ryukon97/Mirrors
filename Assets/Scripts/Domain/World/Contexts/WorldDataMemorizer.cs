@@ -14,5 +14,6 @@ public class WorldDataMemorizer : MonoBehaviour
             return;
         }
         instance = this;
+        DontDestroyOnLoad(this.gameObject);
     }
 }
