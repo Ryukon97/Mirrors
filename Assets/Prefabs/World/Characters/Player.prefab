@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 688994009340955628}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -179,7 +179,7 @@ CharacterController:
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 0.75, z: 0}
 --- !u!114 &3599399097741065713
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -198,6 +198,7 @@ MonoBehaviour:
   AttackEffect: {fileID: 3264648562436710012}
   mouseSenceX: 80
   mouseSenceY: 80
+  anim: {fileID: 5305257427701965785}
 --- !u!114 &1361058527098448723
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -268,7 +269,7 @@ Transform:
   m_GameObject: {fileID: 5623730482289673335}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -300,7 +301,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 94e9d7005bf8ee14381a3aace5e9c263, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.75
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 94e9d7005bf8ee14381a3aace5e9c263, type: 3}
       propertyPath: m_LocalPosition.z
@@ -342,6 +343,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chisa_3DModel
       objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 94e9d7005bf8ee14381a3aace5e9c263, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 756048cb65ca4e0469b1757e0c609bca, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -350,5 +355,10 @@ PrefabInstance:
 --- !u!4 &2251838645043493283 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 94e9d7005bf8ee14381a3aace5e9c263, type: 3}
+  m_PrefabInstance: {fileID: 1786409717584436808}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &5305257427701965785 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 94e9d7005bf8ee14381a3aace5e9c263, type: 3}
   m_PrefabInstance: {fileID: 1786409717584436808}
   m_PrefabAsset: {fileID: 0}
