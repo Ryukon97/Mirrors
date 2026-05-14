@@ -52,7 +52,13 @@ public class QuestBookView : MonoBehaviour
         detailDiv.detailTmpro.text = quest.description;
         titleDiv.gameObject.SetActive(true);
         detailDiv.gameObject.SetActive(false);
-
+        titleDiv.OnToggled = () =>
+        {
+            if (detailDiv.gameObject.activeSelf)
+                detailDiv.gameObject.SetActive(false);
+            else
+                detailDiv.gameObject.SetActive(true);
+        };
         curPoolCnt++;
     }
 
