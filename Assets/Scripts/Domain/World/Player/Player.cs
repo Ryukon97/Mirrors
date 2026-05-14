@@ -13,7 +13,7 @@ public class Player : MonoBehaviour
     public float mouseSenceY;
 
     public PlayerStateMachine FSM { get; private set; }
-
+    public Animator anim;
     private void Awake()
     {
         FSM = new PlayerStateMachine(this);
