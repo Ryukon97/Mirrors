@@ -77,7 +77,7 @@ public class Enemy : MonoBehaviour
 
             if (isSelected)
             {
-                selectionUI.transform.localPosition = new Vector3(0, 1.0f, -0.5f);
+                selectionUI.transform.localPosition = new Vector3(1f, 0f, 0.2f);
             }
         }
     }
