@@ -1158,6 +1158,51 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3614006013795818, guid: 907573f05491e1d41a5f9237f3d21c7f, type: 3}
   m_PrefabInstance: {fileID: 3160183979657299108}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1258270714
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1258270715}
+  - component: {fileID: 1258270716}
+  m_Layer: 0
+  m_Name: WorldDataMemorizer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1258270715
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1258270714}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1258270716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1258270714}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3def8144fb5164caddba9bac101c32, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldDataMemorizer
+  data: {fileID: 0}
 --- !u!1 &1373393801
 GameObject:
   m_ObjectHideFlags: 0
@@ -1900,9 +1945,13 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2335730926585259050, guid: c8dc862219e87d24e83bc4da988d815d, type: 3}
+      propertyPath: m_Size
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6322641556379481703, guid: c8dc862219e87d24e83bc4da988d815d, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.0010116894
+      value: 0.0000050768795
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2762,3 +2811,4 @@ SceneRoots:
   - {fileID: 1159647508}
   - {fileID: 1373393803}
   - {fileID: 1951025758}
+  - {fileID: 1258270715}

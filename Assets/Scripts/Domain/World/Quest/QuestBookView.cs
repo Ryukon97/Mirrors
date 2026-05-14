@@ -14,14 +14,11 @@ public class QuestBookView : MonoBehaviour
     List<QuestBookTitleDivInstance> titleDivs;
     List<QuestBookDetailDivInstance> detailDivs;
 
-    int curPoolCnt;
-
     private void Awake()
     {
         titleDivs = new List<QuestBookTitleDivInstance>();
         detailDivs = new List<QuestBookDetailDivInstance>();
         questBook.SetActive(false);
-        curPoolCnt = 0;
     }
 
     public void AddQuest(QuestData quest)
@@ -29,24 +26,13 @@ public class QuestBookView : MonoBehaviour
         QuestBookTitleDivInstance titleDiv;
         QuestBookDetailDivInstance detailDiv;
 
-        if(curPoolCnt == titleDivs.Count)
-        {
+        titleDiv = Instantiate(titleDivPrefab, questBookContent.transform)
+            .GetComponent<QuestBookTitleDivInstance>();
+        titleDivs.Add(titleDiv);
 
-            titleDiv = Instantiate(titleDivPrefab, questBookContent.transform)
-                .GetComponent<QuestBookTitleDivInstance>();
-            titleDivs.Add(titleDiv);
-
-            detailDiv = Instantiate(detailDivPrefab, questBookContent.transform)
-                .GetComponent<QuestBookDetailDivInstance>();
-            detailDivs.Add(detailDiv);
-
-        }
-        else
-        {
-            titleDiv = titleDivs[curPoolCnt];
-            detailDiv = detailDivs[curPoolCnt];
-        }
-
+        detailDiv = Instantiate(detailDivPrefab, questBookContent.transform)
+            .GetComponent<QuestBookDetailDivInstance>();
+        detailDivs.Add(detailDiv);
 
         titleDiv.titleTmpro.text = quest.title;
         detailDiv.detailTmpro.text = quest.description;
@@ -59,15 +45,21 @@ public class QuestBookView : MonoBehaviour
             else
                 detailDiv.gameObject.SetActive(true);
         };
-        curPoolCnt++;
     }
 
     public void RemoveQuest(QuestData quest)
     {
-        titleDivs.Find(div => quest.qid == div.qid).gameObject.SetActive(false);
-        detailDivs.Find(div => quest.qid == div.qid).gameObject.SetActive(false);
-
-        curPoolCnt--;
+        for(int i = 0; i < titleDivs.Count; i++)
+        {
+            if (titleDivs[i].qid == quest.qid)
+            {
+                Destroy(titleDivs[i].gameObject);
+                Destroy(detailDivs[i].gameObject);
+                titleDivs.RemoveAt(i);
+                detailDivs.RemoveAt(i);
+                return;
+            }
+        }
     }
 
     public void ShowView()
