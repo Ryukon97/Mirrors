@@ -23,4 +23,8 @@ public class Player : MonoBehaviour
     {
         FSM.UpdateState();
     }
+    private void OnDestroy()
+    {
+        FSM.OnDestroy();
+    }
 }

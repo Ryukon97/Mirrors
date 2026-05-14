@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerStateMachine
 {
@@ -21,7 +22,11 @@ public class PlayerStateMachine
 
 		curState = normalState;
 		curState.OnEnter();
-	}
+    }
+	public void OnDestroy()
+	{
+        curState.OnExit();
+    }
 	public bool IsState<T>() where T :PlayerState_Base => curState is T;
 	public void ChangeState(PlayerState_Base state)
 	{

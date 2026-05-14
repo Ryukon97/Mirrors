@@ -15,7 +15,7 @@ public class FadeInOutManager : MonoBehaviour
     {
         if(instance != null)
         {
-            Destroy(instance.gameObject);
+            Destroy(this.gameObject);
             return;
         }
         instance = this;
