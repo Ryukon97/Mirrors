@@ -72,24 +72,28 @@ public class BattleManager : MonoBehaviour
 
     public void OnAttackButtonClick()
     {
+        if (Time.timeScale == 0f) return;
         if (CurrentState != EBattleState.PlayerTurn) return;
         StartCoroutine(PlayerTurnSequence());
     }
 
     public void OnSkillButtonClick()
     {
+        if (Time.timeScale == 0f) return;
         if (CurrentState != EBattleState.PlayerTurn || currentMana < SKILL_COST) return;
         StartCoroutine(ExecuteFullAOESkill());
     }
 
     public void OnUltimateButtonClick()
     {
+        if (Time.timeScale == 0f) return;
         if (CurrentState != EBattleState.PlayerTurn || currentGauge < MAX_GAUGE) return;
         StartCoroutine(UltimateThreeHitSequence());
     }
 
     public void OnWaitButtonClicked()
     {
+        if (Time.timeScale == 0f) return;
         if (CurrentState != EBattleState.PlayerTurn) return;
         StartCoroutine(WaitTurnSequence());
     }
