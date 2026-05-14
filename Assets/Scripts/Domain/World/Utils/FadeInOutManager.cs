@@ -35,6 +35,7 @@ public class FadeInOutManager : MonoBehaviour
             await fadeInAsync();
             something();
             await fadeOutAsync();
+            fadeImg.material.SetFloat("_FadeStep01", 0);
             fadeImg.gameObject.SetActive(false);
         }
         catch(Exception e)
@@ -62,5 +63,9 @@ public class FadeInOutManager : MonoBehaviour
             await Awaitable.NextFrameAsync();
             value -= Time.unscaledDeltaTime / fadeOutDuration;
         }
+    }
+    private void OnDestroy()
+    {
+        fadeImg.material.SetFloat("_FadeStep01", 0);
     }
 }
