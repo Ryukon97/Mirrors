@@ -106,7 +106,7 @@ public class ChunkSpawner : MonoBehaviour
         var worldPos = parent.position + slot.localPosition;
         var eulerY   = slot.randomizeYaw ? Random.Range(0f, 360f) : slot.rotation.y;
         var rotation = Quaternion.Euler(slot.rotation.x, eulerY, slot.rotation.z);
-
-        Object.Instantiate(prefab, worldPos, rotation, parent);
+        
+        Object.Instantiate(prefab, worldPos, rotation * prefab.transform.rotation, parent);
     }
 }
