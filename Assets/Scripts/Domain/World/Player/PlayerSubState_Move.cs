@@ -35,11 +35,11 @@ public class PlayerSubState_Move : PlayerSubState_Base
 		var speedMult = sprintAction.IsPressed() ? 1.5f : 1f;
 		player.controller.Move(dir.normalized * speed * speedMult * Time.deltaTime);
 
-		//var param
-		//	= moveAction.IsInProgress()
-		//	? sprintAction.IsInProgress()
-		//	? 5f : 1f : 0f;
+		var param
+			= moveAction.IsInProgress()
+			? sprintAction.IsInProgress()
+			? 10f : 8f : 0f;
 
-		//player.animator.SetFloat("MoveSpeed", param);
+		player.anim.SetFloat("Speed", param);
 	}
 }
