@@ -11,6 +11,7 @@ public class TextController : MonoBehaviour
     public string[] Texts { get; private set; }
     public bool IsSelection { get => textNode != null && textNode.node.Count > 1; }
     public event Action<TextNodeFinishedArgs> OnTextNodeFinished;
+    public event Action OnNodeChainFinished;
     private void Awake()
     {
         Texts = new string[] {""};
@@ -69,6 +70,7 @@ public class TextController : MonoBehaviour
     private void EndNodeChain()
     {
         HideView();
+        OnNodeChainFinished?.Invoke();
     }
     private void SetModelByViewType(ETextViewType type)
     {

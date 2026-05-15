@@ -5,6 +5,7 @@ public class PlayerSubState_Move : PlayerSubState_Base
 {
 	float speed;
 	float rotSpeed;
+	float animSpeedParam;
 
 	InputAction moveAction = PlayerInputReciever.Instance.MoveAction;
 	InputAction sprintAction = PlayerInputReciever.Instance.SprintAction;
@@ -35,11 +36,8 @@ public class PlayerSubState_Move : PlayerSubState_Base
 		var speedMult = sprintAction.IsPressed() ? 1.5f : 1f;
 		player.controller.Move(dir.normalized * speed * speedMult * Time.deltaTime);
 
-		//var param
-		//	= moveAction.IsInProgress()
-		//	? sprintAction.IsInProgress()
-		//	? 5f : 1f : 0f;
-
-		//player.animator.SetFloat("MoveSpeed", param);
+		animSpeedParam += Time.deltaTime * (moveAction.IsInProgress() ? 6 : -6) * 10f;
+        animSpeedParam = Mathf.Clamp(animSpeedParam, 0, 6.1f);
+		player.anim.SetFloat("Speed", animSpeedParam);
 	}
 }
