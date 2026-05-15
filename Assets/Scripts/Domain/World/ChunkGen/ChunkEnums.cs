@@ -21,4 +21,7 @@ public enum ElementType
     M_Building,
     H_Building,
     Tree_BesideRoad,
+    Lamp_BesideRoad,
+    Lamp_Pole,
+    Bench
 }

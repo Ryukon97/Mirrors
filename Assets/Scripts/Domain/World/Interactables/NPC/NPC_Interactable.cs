@@ -11,12 +11,20 @@ public class NPC_Interactable : NPC, IInteractable
     [SerializeField] TextNode rawTextNode;
 
     [SerializeField] TextController textController;
-
+    public bool forceToInteractingState;
+    public bool destroyOnInteractEnds;
     CancellationToken token;
 
     private void Awake()
     {
         token = destroyCancellationToken;
+        textController.OnNodeChainFinished += DestroySelf;
+    }
+    private void DestroySelf() { if (destroyOnInteractEnds && gameObject != null) Destroy(gameObject); }
+    private void OnDestroy()
+    {
+
+        textController.OnNodeChainFinished -= DestroySelf;
     }
     public void Interact()
     {
@@ -27,6 +35,7 @@ public class NPC_Interactable : NPC, IInteractable
             isReady = false;
         }
         textController.SetAndPlayNode(rawTextNode);
+        if (forceToInteractingState) Player.Instance.FSM.ChangeState(Player.Instance.FSM.interactingState);
     }
 
     async Awaitable PlayNextNodeAuto()
