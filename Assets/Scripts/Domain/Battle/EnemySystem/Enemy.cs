@@ -82,7 +82,7 @@ public class Enemy : MonoBehaviour
 
             if (isSelected)
             {
-                selectionUI.transform.localPosition = new Vector3(1f, 0f, 0.2f);
+                selectionUI.transform.localPosition = new Vector3(1f, 0.7f, 0.2f);
             }
         }
     }
@@ -152,7 +152,7 @@ public class Enemy : MonoBehaviour
         }
 
         // 공격 후딜레이 대기
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(0.5f);
 
         // 4. 본래 자리로 퇴각 복귀 기동
         // 돌아갈 때는 복귀 지점을 바라보게 만들어 시각적 어색함을 지웁니다.
