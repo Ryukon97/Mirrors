@@ -3,6 +3,7 @@ using UnityEngine.VFX;
 
 public class Player : MonoBehaviour
 {
+    public static Player Instance { get; private set; }
     public Transform camTarget;
     public Transform playerBody;
     public CharacterController controller;
@@ -16,6 +17,7 @@ public class Player : MonoBehaviour
     public Animator anim;
     private void Awake()
     {
+        Instance = this;
         FSM = new PlayerStateMachine(this);
     }
     private void Start()
