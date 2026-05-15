@@ -20,4 +20,5 @@ public enum ElementType
     S_Building,
     M_Building,
     H_Building,
+    Tree_BesideRoad,
 }
