@@ -7,7 +7,11 @@ public class PivotToBottomTool : EditorWindow
     [MenuItem("Tools/Set Pivot to Bottom")]
     static void SetPivotToBottom()
     {
-        foreach (var go in Selection.gameObjects)
+        var targets = Selection.gameObjects;
+
+        Selection.activeGameObject = null;
+
+        foreach (var go in targets)
         {
             var renderers = go.GetComponentsInChildren<Renderer>();
             if (renderers.Length == 0) continue;
