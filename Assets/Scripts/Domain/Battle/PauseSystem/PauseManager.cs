@@ -5,6 +5,9 @@ using UnityEngine.SceneManagement;
 
 public class PauseManager : MonoBehaviour
 {
+    // 다른 스크립트에서 접근할 수 있도록 싱글톤 또는 정적 프로퍼티 추가
+    public static PauseManager Instance { get; private set; }
+
     [Header("UI Panels")]
     [SerializeField] private GameObject pausePanel;
 
@@ -14,9 +17,15 @@ public class PauseManager : MonoBehaviour
     [SerializeField] private Button quitButton;
 
     private bool isPaused = false;
+    // QTE나 플레이어 스크립트에서 확인할 수 있는 일시정지 상태 변수
+    public bool IsPaused => isPaused;
 
     private void Awake()
     {
+        // 싱글톤 초기화
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+
         if (pausePanel != null) pausePanel.SetActive(false);
 
         if (pauseButton != null) pauseButton.onClick.AddListener(TogglePause);
