@@ -47,15 +47,26 @@ public class PauseManager : MonoBehaviour
 
         if (isPaused)
         {
+            // [강제 고정] 버튼을 누른 즉시 타임스케일을 완전히 0으로 만들어 전역 시스템을 정지시킵니다.
             Time.timeScale = 0f;
-            pausePanel.SetActive(true);
-            Debug.Log("<color=yellow>게임 일시정지</color>");
+
+            if (pausePanel != null) pausePanel.SetActive(true);
+            Debug.Log("<color=yellow>게임 일시정지 (Time.timeScale = 0)</color>");
         }
         else
         {
             Time.timeScale = 1f;
-            pausePanel.SetActive(false);
-            Debug.Log("<color=green>게임 재개</color>");
+            if (pausePanel != null) pausePanel.SetActive(false);
+            Debug.Log("<color=green>게임 재개 (Time.timeScale = 1)</color>");
+        }
+    }
+
+    // 외부(QTE 등)에서 강제로 타임스케일을 조절하려 할 때 퍼즈 상태라면 강제 차단하기 위한 예방 대책 함수
+    public void ForcePauseScale()
+    {
+        if (isPaused)
+        {
+            Time.timeScale = 0f;
         }
     }
 
