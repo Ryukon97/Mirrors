@@ -10,6 +10,7 @@ public class PlayerState_Watch : PlayerState_Base
     }
     public override void OnEnter()
     {
+        player.anim.SetFloat("Speed", 0);
         foreach (var state in subStates)
             state.OnEnter(this, player);
     }
