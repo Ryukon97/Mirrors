@@ -10,11 +10,17 @@ public class BossEnemy : Enemy
     [SerializeField] private float attackDistance = 2.0f;
     [SerializeField] private float counterDistance = 1.5f;
 
+    // 부모(Enemy)의 오버라이딩을 방지하고 보스 고유의 애니메이터 제어를 위한 변수
     private Animator bossAnim;
+
+    // 축 뒤틀림 현상을 완벽하게 방지하기 위해 보스용 정면 회전값 저장
+    private Quaternion bossOriginalRot;
 
     protected override void Awake()
     {
         base.Awake();
+
+        // 부모의 Awake에서 일반 anim을 가져왔듯이, 보스도 본체 및 자식 컴포넌트에서 애니메이터를 정확히 캐싱합니다.
         bossAnim = GetComponent<Animator>();
         if (bossAnim == null)
         {
@@ -22,27 +28,56 @@ public class BossEnemy : Enemy
         }
     }
 
+    private void Start()
+    {
+        // 최초 회전값을 백업하되, 스폰 셋업에서 한 번 더 정밀하게 동기화해 줍니다.
+        bossOriginalRot = transform.rotation;
+    }
+
+    /// <summary>
+    /// 외부(부모 클래스)에서 보스의 애니메이터 컴포넌트에 접근할 수 있도록 동기화 통로를 열어줍니다.
+    /// </summary>
+    public void SyncBossAnimatorWithBase()
+    {
+        if (bossAnim == null)
+        {
+            bossAnim = GetComponent<Animator>() ?? GetComponentInChildren<Animator>();
+        }
+
+        // 중요: 부모 클래스(Enemy)가 가지고 있는 protected 'anim' 변수에도 보스의 애니메이터를 꽂아줍니다.
+        // 이 처리가 되어야 체력이 0이 되었을 때 부모의 DieSequence() 내에서 보스 사망 애니메이션이 정상 호출됩니다.
+        System.Reflection.FieldInfo field = typeof(Enemy).GetField("anim", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (field != null)
+        {
+            field.SetValue(this, bossAnim);
+        }
+    }
+
     public static IEnumerator SpawnBossSetup(GameObject bossPrefab, Transform spawnPoint, BattleManager bm)
     {
         Debug.Log("<color=orange>[System] 모든 적 처치! 보스전 전용 턴제로 전환합니다.</color>");
-        yield return new WaitForSeconds(1.5f);
+        yield return new WaitForSeconds(3f);
 
         if (bossPrefab != null && spawnPoint != null)
         {
             GameObject bossObj = Instantiate(bossPrefab, spawnPoint.position, spawnPoint.rotation);
             BossEnemy boss = bossObj.GetComponent<BossEnemy>();
 
-            if (boss != null && boss.bossAnim == null)
+            if (boss != null)
             {
-                boss.bossAnim = bossObj.GetComponent<Animator>() ?? bossObj.GetComponentInChildren<Animator>();
-            }
+                // 1. 애니메이터 캐싱 및 부모-자식 구조간의 컴포넌트 강제 동기화
+                boss.SyncBossAnimatorWithBase();
 
-            if (boss != null && bm != null)
-            {
-                bm.enemies.Clear();
-                bm.enemies.Add(boss);
-                bm.SetupBossTimeline(boss);
-                bm.SetTarget(boss);
+                // 2. 스폰이 완벽히 끝난 시점의 회전축을 정밀하게 다시 저장 (뒤틀림 원천 차단)
+                boss.bossOriginalRot = spawnPoint.rotation;
+
+                if (bm != null)
+                {
+                    bm.enemies.Clear();
+                    bm.enemies.Add(boss);
+                    bm.SetupBossTimeline(boss);
+                    bm.SetTarget(boss);
+                }
             }
         }
 
@@ -50,24 +85,21 @@ public class BossEnemy : Enemy
     }
 
     /// <summary>
-    /// 보스 일반 평타 기믹 함수 (출발 타이밍 및 슬로우모션 싱크 버그 수정)
+    /// 보스 일반 평타 기믹 함수 (복귀 시 축 뒤틀림 버그 완벽 수정)
     /// </summary>
     public IEnumerator ExecuteMeleeAttackSequence(Transform playerTransform, QTEManager qteManager)
     {
         Vector3 startPos = transform.position;
-        Quaternion startRot = transform.rotation;
 
         Vector3 targetPos = playerTransform.position + playerTransform.forward * attackDistance;
         targetPos.y = transform.position.y;
 
         transform.LookAt(new Vector3(playerTransform.position.x, transform.position.y, playerTransform.position.z));
 
-        // [수정 포인트 1] 돌진하기 직전(혹은 동시에)에 애니메이션 트리거를 미리 발동시킵니다.
-        // 유니티 믹싱/전환 지연 시간(Transition) 동안 돌진을 수행하여 타이밍을 기가 막히게 맞춥니다.
         if (bossAnim != null)
         {
             bossAnim.SetTrigger("Attack");
-            Debug.Log("<color=cyan>[Animation] 돌진과 동시에 공격 애니메이션 트리거 선발동</color>");
+            Debug.Log("<color=cyan>[Animation] 돌진과 동시에 보스 공격 애니메이션 트리거 선발동</color>");
         }
 
         // 1. 돌진 기동
@@ -80,12 +112,9 @@ public class BossEnemy : Enemy
         }
         transform.position = targetPos;
 
-        // [수정 포인트 2] 돌진 완료 후, 애니메이션 상태가 'Attack'으로 완벽히 전전(Transition)할 수 있도록 
-        // 타임스케일이 1인 정상 상태에서 아주 잠깐 프레임을 대기해 줍니다. (0.1초~0.15초)
         yield return new WaitForSeconds(0.12f);
 
-        // [수정 포인트 3] 극적인 극소 슬로우 모션 및 QTE UI 개방
-        // 이때 보스 애니메이션이 아예 굳어버리는 것을 막기 위해 UnscaledTime(현실 시간 기준 재생)으로 잠시 변경합니다.
+        // 2. 극적인 극소 슬로우 모션 및 QTE UI 개방
         if (bossAnim != null) bossAnim.updateMode = AnimatorUpdateMode.UnscaledTime;
 
         Time.timeScale = 0.15f;
@@ -102,7 +131,6 @@ public class BossEnemy : Enemy
                 isQteFinished = true;
             });
 
-            // QTE 판단 동안 대기 (Unscaled 상태이므로 플레이어 반응 대기 가능)
             while (!isQteFinished)
             {
                 yield return null;
@@ -136,6 +164,8 @@ public class BossEnemy : Enemy
         yield return new WaitForSeconds(0.4f);
 
         // 3. 원래 자리로 퇴각 복귀 기동
+        transform.LookAt(new Vector3(startPos.x, transform.position.y, startPos.z));
+
         elapsed = 0f;
         while (elapsed < 0.25f)
         {
@@ -144,16 +174,17 @@ public class BossEnemy : Enemy
             yield return null;
         }
         transform.position = startPos;
-        transform.rotation = startRot;
+
+        // [핵심] 자리에 도착한 직후 보스의 뼈대 회전축을 원래대로 완전히 고정합니다.
+        transform.rotation = bossOriginalRot;
     }
 
     /// <summary>
-    /// 보스 반격기 기믹 함수 (타이밍 동기화)
+    /// 보스 반격기 기믹 함수 (복귀 시 축 뒤틀림 버그 완벽 수정)
     /// </summary>
     public IEnumerator ExecuteCounterSequence(Transform playerTransform)
     {
         Vector3 startPos = transform.position;
-        Quaternion startRot = transform.rotation;
 
         Vector3 targetPos = playerTransform.position + playerTransform.forward * counterDistance;
         targetPos.y = transform.position.y;
@@ -167,7 +198,7 @@ public class BossEnemy : Enemy
         }
 
         float elapsed = 0f;
-        while (elapsed < 0.3f) // 반격 돌진은 좀 더 빠르게 수정
+        while (elapsed < 0.3f)
         {
             transform.position = Vector3.Lerp(startPos, targetPos, elapsed / 0.3f);
             elapsed += Time.deltaTime;
@@ -185,6 +216,9 @@ public class BossEnemy : Enemy
 
         yield return new WaitForSeconds(0.5f);
 
+        // 퇴각할 때 시작 지점을 바라보게 설정
+        transform.LookAt(new Vector3(startPos.x, transform.position.y, startPos.z));
+
         elapsed = 0f;
         while (elapsed < 0.3f)
         {
@@ -193,7 +227,9 @@ public class BossEnemy : Enemy
             yield return null;
         }
         transform.position = startPos;
-        transform.rotation = startRot;
+
+        // [핵심] 자리에 도착한 직후 보스의 뼈대 회전축을 원래대로 완전히 고정합니다.
+        transform.rotation = bossOriginalRot;
 
         DisableCounterMode();
     }
