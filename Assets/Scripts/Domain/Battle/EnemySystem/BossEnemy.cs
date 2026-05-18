@@ -56,7 +56,29 @@ public class BossEnemy : Enemy
     public static IEnumerator SpawnBossSetup(GameObject bossPrefab, Transform spawnPoint, BattleManager bm)
     {
         Debug.Log("<color=orange>[System] 모든 적 처치! 보스전 전용 턴제로 전환합니다.</color>");
-        yield return new WaitForSeconds(3f);
+
+        // ---------------- [수정 포인트: 스카이박스 서서히 블렌딩] ----------------
+        if (RenderSettings.skybox != null)
+        {
+            float duration = 2.0f;    // 스카이박스가 서서히 바뀌는 총 시간 (원하는 초로 조절 가능)
+            float elapsedTime = 0f;
+            float startBlend = RenderSettings.skybox.GetFloat("_Blend"); // 현재 블렌드 값 기점 시작
+
+            while (elapsedTime < duration)
+            {
+                elapsedTime += Time.deltaTime;
+                // 시간에 따라 0에서 1까지 비율 계산
+                float blendValue = Mathf.Lerp(startBlend, 1f, elapsedTime / duration);
+                RenderSettings.skybox.SetFloat("_Blend", blendValue);
+
+                yield return null; // 다음 프레임까지 대기
+            }
+            RenderSettings.skybox.SetFloat("_Blend", 1f); // 최종 값 고정 안전장치
+        }
+        // ------------------------------------------------------------------------
+
+        // 앞서 블렌딩 연출로 2초를 소모했으므로 원래 기다리던 3초 중 남은 1초만 추가 대기합니다.
+        yield return new WaitForSeconds(1.0f);
 
         if (bossPrefab != null && spawnPoint != null)
         {
@@ -83,7 +105,6 @@ public class BossEnemy : Enemy
 
         yield return new WaitForSeconds(1.0f);
     }
-
     /// <summary>
     /// 보스 일반 평타 기믹 함수 (복귀 시 축 뒤틀림 버그 완벽 수정)
     /// </summary>
