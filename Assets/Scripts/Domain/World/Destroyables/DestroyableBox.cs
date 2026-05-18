@@ -15,6 +15,10 @@ public class DestroyableBox : MonoBehaviour, IDestroyable
         curHP--;
 
         if (curHP <= 0)
-            Debug.Log("Destroyed");
+            DoDestroy();
+    }
+    private void DoDestroy()
+    {
+        Destroy(this.gameObject);
     }
 }
