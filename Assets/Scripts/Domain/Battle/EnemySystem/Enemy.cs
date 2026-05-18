@@ -174,6 +174,9 @@ public class Enemy : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
+        // 이미 죽어가는 상태라면 중복 데미지 및 사망 처리를 방지합니다.
+        if (currentHp <= 0) return;
+
         currentHp -= damage;
         currentHp = Mathf.Max(currentHp, 0);
 
@@ -183,11 +186,52 @@ public class Enemy : MonoBehaviour
 
         if (currentHp <= 0)
         {
-            if (BattleManager.Instance != null)
-                BattleManager.Instance.RemoveEnemy(this);
-
-            Destroy(gameObject);
+            // [수정] 바로 Destroy하지 않고, 사망 연출 코루틴을 실행합니다.
+            StartCoroutine(DieSequence());
         }
+    }
+
+    /// <summary>
+    /// 적 캐릭터 사망 연출 및 데이터 정리 코루틴
+    /// </summary>
+    private IEnumerator DieSequence()
+    {
+        Debug.Log($"<color=red>[사망] {gameObject.name}의 체력이 0이 되어 사망 애니메이션을 재생합니다.</color>");
+
+        // 1. 배틀 매니저의 타임라인 및 적 리스트에서 먼저 제외하여 턴이 꼬이지 않게 합니다.
+        if (BattleManager.Instance != null)
+        {
+            BattleManager.Instance.RemoveEnemy(this);
+        }
+
+        // 2. 조준선 UI가 켜져 있었다면 즉시 꺼줍니다.
+        if (selectionUI != null)
+        {
+            selectionUI.SetActive(false);
+        }
+
+        // 3. 사망 애니메이션 트리거 작동
+        if (anim != null)
+        {
+            // 유니티 애니메이터에 'Die' 트리거가 세팅되어 있어야 합니다.
+            anim.SetTrigger("Die");
+
+            // 애니메이션이 'Die' 상태로 완전히 진입할 수 있도록 미세 대기
+            yield return new WaitForSeconds(0.1f);
+
+            // 4. 사망 애니메이션의 재생 시간만큼 대기합니다.
+            // 대략적인 사망 모션 시간(예: 1.5초)을 주거나, 애니메이터 상태를 체크할 수 있습니다.
+            // 여기서는 1.5초 동안 쓰러지는 모습을 보여줍니다. (프로젝트 모션 길이에 맞춰 조절 가능)
+            yield return new WaitForSeconds(3f);
+        }
+        else
+        {
+            // 애니메이터가 없을 경우를 대비한 예외 처리 대기
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        // 5. 모든 연출이 끝난 후 게임 오브젝트를 최종 삭제합니다.
+        Destroy(gameObject);
     }
 
     protected void UpdateHpUI()
