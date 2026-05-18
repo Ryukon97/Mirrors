@@ -20,9 +20,15 @@ public class SelectionTextView : TextView
         if (selectionTextInstance.gameObject.activeSelf == false)
             selectionTextInstance.gameObject.SetActive(true);
 
-        for(int i = 0; i < selectionTextInstance.tmpros.Count && i < text.Length; i++)
+        for(int i = 0; i < selectionTextInstance.tmpros.Count; i++)
         {
-            selectionTextInstance.tmpros[i].text = text[i];
+            if (i < text.Length)
+            {
+                selectionTextInstance.tmpros[i].text = text[i];
+                selectionTextInstance.buttons[i].SetActive(true);
+            }
+            else
+                selectionTextInstance.buttons[i].SetActive(false);
         }
     }
 
