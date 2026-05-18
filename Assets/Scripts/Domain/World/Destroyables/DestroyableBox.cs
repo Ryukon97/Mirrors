@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class DestroyableBox : MonoBehaviour, IDestroyable
 {
+    [SerializeField] GameObject particle;
     public int maxHP;
     int curHP;
     private void Awake()
@@ -19,6 +20,7 @@ public class DestroyableBox : MonoBehaviour, IDestroyable
     }
     private void DoDestroy()
     {
+        Instantiate(particle, transform.position, particle.transform.rotation);
         Destroy(this.gameObject);
     }
 }
