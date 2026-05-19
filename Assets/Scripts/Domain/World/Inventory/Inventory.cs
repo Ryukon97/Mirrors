@@ -6,7 +6,7 @@ public class Inventory: MonoBehaviour
     InventoryItemMatrix matrix;
     InventoryItemPoper poper;
     InventoryItemStacker stacker;
-    [SerializeField] Vector2Int InventorySize;
+    [SerializeField] int InventorySize;
     [SerializeField] InventoryView view;
 
     private void Awake()

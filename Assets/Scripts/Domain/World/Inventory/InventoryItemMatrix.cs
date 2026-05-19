@@ -6,14 +6,14 @@ public class InventoryItemMatrix
 {
     private List<InventoryItemCell> _items;
 
-    public Vector2Int Size { get; private set; }
+    public int Size { get; private set; }
     public IReadOnlyList<IReadOnlyItemCell> Items => _items;
 
     public event Action<InventoryItemCell> OnItemAdded;
     public event Action<int, InventoryItemCell> OnItemAmountChanged;
     public event Action<int, InventoryItemCell> OnItemRemoved;
 
-    public InventoryItemMatrix(Vector2Int size)
+    public InventoryItemMatrix(int size)
     {
         this.Size = size;
         _items = new List<InventoryItemCell>();
