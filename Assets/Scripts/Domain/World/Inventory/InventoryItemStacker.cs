@@ -11,11 +11,11 @@ public class InventoryItemStacker
     /// <returns></returns>
     public bool AddItem(InventoryItemMatrix matrix, InventoryItemCell cell)
     {
-        if (cell.itemCnt == 0) return false;
-        int len = matrix.size.x * matrix.size.y;
-        if (matrix.items.Count < len)
+        if (cell.ItemCnt == 0) return false;
+        int len = matrix.Size.x * matrix.Size.y;
+        if (matrix.Items.Count < len)
         {
-            matrix.items.Add(cell);
+            matrix.AddItem(cell);
             return true;
         }
         return false;

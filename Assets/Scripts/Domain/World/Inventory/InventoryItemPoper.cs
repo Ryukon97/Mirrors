@@ -16,18 +16,18 @@ public class InventoryItemPoper
     {
         int sumAmount = 0;
         List<int> indexs = new List<int>();
-        for(int i = 0; i< matrix.items.Count; i++)
+        for(int i = 0; i< matrix.Items.Count; i++)
         {
-            if (matrix.items[i].itemID != itemId) continue;
+            if (matrix.Items[i].ItemID != itemId) continue;
             indexs.Add(i);
-            sumAmount += matrix.items[i].itemCnt;
+            sumAmount += matrix.Items[i].ItemCnt;
             if(sumAmount >= cnt)
             {
                 for(int j = 0; j < indexs.Count - 1; j++)
                 {
-                    matrix.items[indexs[j]].itemCnt = 0;
+                    matrix.ChangeItemAmount(indexs[j], 0);
                 }
-                matrix.items[indexs.Count - 1].itemCnt = sumAmount - cnt;
+                matrix.ChangeItemAmount(indexs.Count - 1, sumAmount - cnt);
                 matrix.CleanZeroCntItem();
                 return true;
             }
