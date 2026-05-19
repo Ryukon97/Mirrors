@@ -17,6 +17,10 @@ public class InventoryView: MonoBehaviour
     {
         instances = new List<InventoryCellInstance>();
     }
+    private void Start()
+    {
+        inventoryRootUIObj.SetActive(false);
+    }
     private void OnDestroy()
     {
         UnBindInventoryChangedEvents(); // for fail-safe
