@@ -11,6 +11,7 @@ public class InventoryItemStacker
     /// <returns></returns>
     public bool AddItem(InventoryItemMatrix matrix, InventoryItemCell cell)
     {
+        if (cell.itemCnt == 0) return false;
         int len = matrix.size.x * matrix.size.y;
         if (matrix.items.Count < len)
         {
