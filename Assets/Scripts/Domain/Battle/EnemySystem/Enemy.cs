@@ -183,7 +183,10 @@ public class Enemy : MonoBehaviour
         CurrentHp = currentHp;
 
         UpdateHpUI();
-
+        if (BattleManager.Instance != null)
+        {
+            BattleManager.Instance.LogDamage(gameObject.name, damage);
+        }
         if (currentHp <= 0)
         {
             // [수정] 바로 Destroy하지 않고, 사망 연출 코루틴을 실행합니다.

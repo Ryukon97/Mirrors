@@ -16,7 +16,7 @@ public class BossEnemy : Enemy
     // 축 뒤틀림 현상을 완벽하게 방지하기 위해 보스용 정면 회전값 저장
     private Quaternion bossOriginalRot;
 
-    protected override void Awake()
+    protected new void Awake()
     {
         base.Awake();
 
