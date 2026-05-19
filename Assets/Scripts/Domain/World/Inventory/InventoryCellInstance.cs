@@ -1,18 +1,19 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class InventoryCellInstance : MonoBehaviour
 {
-    public string id;
-    public int count;
+    [NonSerialized] public string id;
+    [NonSerialized] public int count;
     public Image image;
     public TextMeshProUGUI tmpro;
-    public void UpdateData(InventoryItemCell data)
+    public void UpdateData(InventoryItemCell data, ItemDB itemDB)
     {
         id = data.ItemID;
         count = data.ItemCnt;
         tmpro.text = data.ItemCnt.ToString();
-        //image.sprite = 
+        image.sprite = itemDB.items.Find(x => x.id == id).sprite;
     }
 }

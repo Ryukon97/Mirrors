@@ -8,8 +8,9 @@ public class InventoryView: MonoBehaviour
     // Gonna enumerate cells in here. auto-aligned by layout component
     [SerializeField] GameObject inventoryMatrixLayoutObj;
     // each cells prefab
-    [SerializeField] GameObject inventoryCellInstancePrefab; 
-    
+    [SerializeField] GameObject inventoryCellInstancePrefab;
+    [SerializeField] ItemDB itemDB;
+
     private List<InventoryCellInstance> instances;
     private InventoryItemMatrix bindedMatrix;
 
@@ -67,12 +68,12 @@ public class InventoryView: MonoBehaviour
     private void Matrix_OnItemAdded(InventoryItemCell data)
     {
         var obj = Instantiate(inventoryCellInstancePrefab, inventoryMatrixLayoutObj.transform).GetComponent<InventoryCellInstance>();
-        obj.UpdateData(data);
+        obj.UpdateData(data, itemDB);
         instances.Add(obj);
     }
     private void Matrix_OnItemAmountChanged(int index, InventoryItemCell data)
     {
-        instances[index].UpdateData(data);
+        instances[index].UpdateData(data, itemDB);
     }
     private void Matrix_OnItemRemoved(int index, InventoryItemCell data)
     {
