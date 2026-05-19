@@ -1,16 +1,22 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-public class Inventory : MonoBehaviour
+public class Inventory
 {
     InventoryItemMatrix matrix;
     InventoryItemPoper poper;
     InventoryItemStacker stacker;
 
-    private void Awake()
+    public InventoryItemMatrix Matrix { get => matrix; }
+    public Inventory(
+        InventoryItemMatrix matrix,
+        InventoryItemPoper poper,
+        InventoryItemStacker stacker
+        )
     {
-        matrix = new InventoryItemMatrix(new Vector2Int(6, 6));
-        poper = new InventoryItemPoper();
-        stacker = new InventoryItemStacker();
+        this.matrix = matrix;
+        this.poper = poper;
+        this.stacker = stacker;
     }
 
     public bool TryAddItem(InventoryItemCell cell) => stacker.AddItem(matrix, cell);
