@@ -9,6 +9,9 @@ public class Player : MonoBehaviour
     public CharacterController controller;
 
     public VisualEffect AttackEffect;
+    public AudioSource MainAudio;
+    public AudioSource SFXAudio;
+    public AudioClip AttackSFX;
 
     public float mouseSenceX;
     public float mouseSenceY;

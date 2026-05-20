@@ -26,12 +26,12 @@ public class BalloonTextView : TextView
             balloonInstance.gameObject.SetActive(false);
         }
     }
-    public override void UpdateView(string[] text)
+    public override void UpdateView(TextController.TextModel model)
     {
         if (balloonInstance.gameObject.activeSelf == false)
             balloonInstance.gameObject.SetActive(true);
 
-        balloonInstance.tmpro.text = text[0];
+        balloonInstance.tmpro.text = model.texts[0];
         viewRequestedTime = Time.time;
     }
 

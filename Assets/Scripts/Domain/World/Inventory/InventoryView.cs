@@ -10,7 +10,6 @@ public class InventoryView: MonoBehaviour
     // each cells prefab
     [SerializeField] GameObject inventoryCellInstancePrefab;
     [SerializeField] ItemDB itemDB;
-
     private List<InventoryCellInstance> instances;
     private InventoryItemMatrix bindedMatrix;
 
@@ -53,10 +52,12 @@ public class InventoryView: MonoBehaviour
     private void OpenView()
     {
         inventoryRootUIObj.SetActive(true);
+        PlayerSubState_Look.locks++;
     }
     private void CloseView()
     {
         inventoryRootUIObj.SetActive(false);
+        PlayerSubState_Look.locks--;
     }
 
     // ------------ Event Listeners

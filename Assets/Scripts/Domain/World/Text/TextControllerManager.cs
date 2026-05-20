@@ -10,6 +10,7 @@ public class TextControllerManager : MonoBehaviour
     public BalloonTextView BalloonView { get; private set; }
     public SelectionTextView SelectionView { get; private set; }
     public event Action<TextNodeFinishedArgs> OnTextNodeFinished;
+    public event Action<TextNodeStartedArgs> OnTextNodeStarted;
 
     TextController controller;
     public TextController Controller
@@ -21,10 +22,14 @@ public class TextControllerManager : MonoBehaviour
         
         set
         {
-            if(controller != null)
+            if (controller != null)
+            {
                 controller.OnTextNodeFinished -= HandleTextNodeFinished;
+                controller.OnTextNodeStarted -= HandleTextNodeStarted;
+            }
             controller = value;
             controller.OnTextNodeFinished += HandleTextNodeFinished;
+            controller.OnTextNodeStarted += HandleTextNodeStarted;
         }
     }
     private void Awake()
@@ -61,6 +66,10 @@ public class TextControllerManager : MonoBehaviour
     void HandleTextNodeFinished(TextNodeFinishedArgs args)
     {
         OnTextNodeFinished?.Invoke(args);
+    }
+    void HandleTextNodeStarted(TextNodeStartedArgs args)
+    {
+        OnTextNodeStarted?.Invoke(args);
     }
     public bool TryPlayNextNode(ETextControllerType type, out bool wasLast)
     {
