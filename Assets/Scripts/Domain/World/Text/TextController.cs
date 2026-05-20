@@ -4,26 +4,36 @@ using UnityEngine;
 
 public class TextController : MonoBehaviour
 {
+    public class TextModel
+    {
+        public string[] texts;
+        public Sprite illust;
+        public TextModel()
+        {
+            texts = new string[] { "" };
+            illust = null;
+        }
+    }
     public string ownerName;
     private TextView curTextView;
     private TextNode textNode;
+    public TextModel model { get; private set; }
     public ETextControllerType controllerType;
-    public string[] Texts { get; private set; }
     public bool IsSelection { get => textNode != null && textNode.viewType == ETextViewType.Selection; }
     public event Action<TextNodeFinishedArgs> OnTextNodeFinished;
     public event Action<TextNodeStartedArgs> OnTextNodeStarted;
     public event Action OnNodeChainFinished;
     private void Awake()
     {
-        Texts = new string[] {""};
+        model = new TextModel();
     }
 
     // ---------------- public ---------------- 
-    public void ChangeText(string[] texts) => Texts = texts;
+    public void ChangeText(string[] texts) => model.texts = texts;
     public void RequestView()
     {
         if (curTextView != null)
-            curTextView.UpdateView(Texts);
+            curTextView.UpdateView(model);
     }
     public void HideView()
     {
