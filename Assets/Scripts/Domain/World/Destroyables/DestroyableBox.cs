@@ -3,6 +3,7 @@ using UnityEngine;
 public class DestroyableBox : MonoBehaviour, IDestroyable
 {
     [SerializeField] GameObject particle;
+    [SerializeField] GameObject dropItemPrefab;
     public int maxHP;
     int curHP;
     private void Awake()
@@ -21,6 +22,7 @@ public class DestroyableBox : MonoBehaviour, IDestroyable
     private void DoDestroy()
     {
         Instantiate(particle, transform.position, particle.transform.rotation);
+        Instantiate(dropItemPrefab, transform.position, dropItemPrefab.transform.rotation);
         Destroy(this.gameObject);
     }
 }
