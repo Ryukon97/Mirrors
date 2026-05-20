@@ -30,12 +30,15 @@ public class QuestBookView : MonoBehaviour
             .GetComponent<QuestBookTitleDivInstance>();
         titleDivs.Add(titleDiv);
 
+
         detailDiv = Instantiate(detailDivPrefab, questBookContent.transform)
             .GetComponent<QuestBookDetailDivInstance>();
         detailDivs.Add(detailDiv);
 
         titleDiv.titleTmpro.text = quest.title;
         detailDiv.detailTmpro.text = quest.description;
+        titleDiv.qid = quest.qid;
+        detailDiv.qid = quest.qid;
         titleDiv.gameObject.SetActive(true);
         detailDiv.gameObject.SetActive(false);
         titleDiv.OnToggled = () =>
