@@ -174,22 +174,23 @@ public class Enemy : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        // 이미 죽어가는 상태라면 중복 데미지 및 사망 처리를 방지합니다.
         if (currentHp <= 0) return;
 
         currentHp -= damage;
         currentHp = Mathf.Max(currentHp, 0);
-
         CurrentHp = currentHp;
 
         UpdateHpUI();
+
+        // [핵심 변경] 우측 상단 로그 대신, 내 위치(transform.position) 위에 대미지 팝업!
         if (BattleManager.Instance != null)
         {
-            BattleManager.Instance.LogDamage(gameObject.name, damage);
+            // 내 3D 좌표(transform.position)를 넘겨주어 머리 위에 스폰하도록 유도
+            BattleManager.Instance.SpawnDamageText(transform.position, damage);
         }
+
         if (currentHp <= 0)
         {
-            // [수정] 바로 Destroy하지 않고, 사망 연출 코루틴을 실행합니다.
             StartCoroutine(DieSequence());
         }
     }
