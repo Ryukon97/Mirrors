@@ -56,6 +56,7 @@ public class PlayerState_Attack : PlayerState_Base
     void SpawnAttack()
     {
         player.AttackEffect.Play();
+        player.SFXAudio.PlayOneShot(player.AttackSFX);
         TryDestroyTargets();
     }
 
