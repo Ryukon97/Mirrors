@@ -51,6 +51,7 @@ public class TextController : MonoBehaviour
         OnTextNodeStarted?.Invoke(new TextNodeStartedArgs(textNode.id));
         SetModelByViewType(textNode.viewType);
         SetViewByViewType(textNode.viewType);
+        model.illust = textNode.illust;
 
         RequestView();
         return true;
