@@ -4,10 +4,12 @@ public struct QuestProgressedArgs
 {
     public EQuestConditionType type;
     public int valueInt;
+    public string valueString;
 
-    public QuestProgressedArgs(EQuestConditionType type, int valueInt)
+    public QuestProgressedArgs(EQuestConditionType type)
     {
         this.type = type;
-        this.valueInt = valueInt;
+        valueInt = 0;
+        valueString = "";
     }
 }

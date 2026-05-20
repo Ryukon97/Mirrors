@@ -7,13 +7,11 @@ public class QuestProgressor : MonoBehaviour
 {
     private List<QuestData> questDatas;
     private Dictionary<string, List<QuestProgressData>> progressDict;
-    QuestConditionCheckService conditionCheckService;
     QuestProgressService questProgressService;
     [SerializeField] QuestView questView;
 
     private void Awake()
     {
-        conditionCheckService = new QuestConditionCheckService();
         questProgressService = new QuestProgressService();
         questDatas = new List<QuestData>();
         progressDict = new Dictionary<string, List<QuestProgressData>>();
@@ -21,9 +19,15 @@ public class QuestProgressor : MonoBehaviour
 
     private void OnEnable()
     {
+        TextControllerManager.Instance.OnTextNodeStarted -= HandleNodeStarted;
+        TextControllerManager.Instance.OnTextNodeStarted += HandleNodeStarted;
         // OnInventoryChanged += HandleInventoryChanged;
         // OnEnemyKilled += HandleQuestProgressed;
         // ... subscribe what u need. un sub in OnDisabled
+    }
+    private void OnDisable()
+    {
+        TextControllerManager.Instance.OnTextNodeStarted -= HandleNodeStarted;
     }
 
     // ------------------- public ----------------
@@ -52,7 +56,6 @@ public class QuestProgressor : MonoBehaviour
     public void RemoveQuest(string qid)
     {
         if (TryGetData(qid, out QuestData quest) == false) return;
-        
         questDatas.Remove(quest);
         questView.RemoveQuest(quest); 
         progressDict.Remove(qid);
@@ -91,23 +94,33 @@ public class QuestProgressor : MonoBehaviour
     //
     // And Add QuestProgressService a discrete Handler. 
     // And Add Subscription snippets in Awake()
-
+    void HandleNodeStarted(TextNodeStartedArgs args)
+    {
+        var info = new QuestProgressedArgs(EQuestConditionType.Talk);
+        info.valueString = args.id;
+        UpdateProgresses(info);
+    }
 
     void UpdateProgresses(QuestProgressedArgs args)
     {
-        foreach (var progresses in progressDict.Values)
+        HashSet<string> completeQids = new();
+        foreach (var qid in progressDict.Keys)
         {
-            foreach (var progress in progresses)
+            var progresses = progressDict[qid];
+            for(int i = 0; i < progresses.Count; i++)
             {
+                var progress = progresses[i];
+
                 if (progress.origin.type != args.type) return;
                 if (progress.completion) return;
 
                 questProgressService.Do(args, progress);
-
-                if (conditionCheckService.IsMet(progress))
-                    progress.Complete();
             }
+            if (QuestLoopManager.Instance.CheckQuestCompletion(qid))
+                completeQids.Add(qid);
         }
+        foreach(var qid in completeQids)
+            QuestLoopManager.Instance.CompleteQuest(qid);
     }
 
     // ---------------------- Utils -----------------

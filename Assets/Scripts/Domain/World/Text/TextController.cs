@@ -11,6 +11,7 @@ public class TextController : MonoBehaviour
     public string[] Texts { get; private set; }
     public bool IsSelection { get => textNode != null && textNode.viewType == ETextViewType.Selection; }
     public event Action<TextNodeFinishedArgs> OnTextNodeFinished;
+    public event Action<TextNodeStartedArgs> OnTextNodeStarted;
     public event Action OnNodeChainFinished;
     private void Awake()
     {
@@ -37,6 +38,7 @@ public class TextController : MonoBehaviour
             EndNodeChain();
             return false;
         }
+        OnTextNodeStarted?.Invoke(new TextNodeStartedArgs(textNode.id));
         SetModelByViewType(textNode.viewType);
         SetViewByViewType(textNode.viewType);
 
