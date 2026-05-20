@@ -2,16 +2,17 @@
 using System;
 
 [Serializable]
-public struct QuestConditionData
+public class QuestConditionData
 {
     public EQuestConditionType type;
     public int valueInt;
+    public string valueString;
 
     public QuestConditionData GetNewProgress()
     {
-        QuestConditionData progress = this;
+        QuestConditionData progress = new QuestConditionData();
         progress.valueInt = 0;
-
+        progress.valueString = "";
         return progress;
     }
 }
