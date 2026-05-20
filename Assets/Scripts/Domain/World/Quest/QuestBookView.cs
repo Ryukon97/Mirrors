@@ -72,10 +72,12 @@ public class QuestBookView : MonoBehaviour
     public void ShowView()
     {
         questBook.SetActive(true);
+        PlayerSubState_Look.locks++;
     }
     public void HideView()
     {
         detailDivs.ForEach(div => div.gameObject.SetActive(false));
         questBook.SetActive(false);
+        PlayerSubState_Look.locks--;
     }
 }
