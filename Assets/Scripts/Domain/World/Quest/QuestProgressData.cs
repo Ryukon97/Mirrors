@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public struct QuestProgressData
+public class QuestProgressData
 {
     public string qid;
     public QuestConditionData origin;
@@ -13,5 +13,4 @@ public struct QuestProgressData
         this.current = current;
         this.completion = false;
     }
-    public void Complete() => completion = true;
 }

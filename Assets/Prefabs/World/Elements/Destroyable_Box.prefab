@@ -47,6 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DestroyableBox
   particle: {fileID: 7480551784858167149, guid: 42d74283201dc03459d4b3e8199ffb81, type: 3}
+  dropItemPrefab: {fileID: 6798746890060057774, guid: cd273d2a1afe855428fb588f5a240b10, type: 3}
   maxHP: 1
 --- !u!65 &2886170770063939942
 BoxCollider:
@@ -68,7 +69,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 0.86127067, y: 0.6047598, z: 0.6867007}
-  m_Center: {x: -0.43063533, y: 0.3023799, z: -0.34335035}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &5841108072418152697
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -79,15 +80,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4607789021669949657, guid: e22fad9e70ae94d42885f95bddd898ce, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 0.421
       objectReference: {fileID: 0}
     - target: {fileID: 4607789021669949657, guid: e22fad9e70ae94d42885f95bddd898ce, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -0.309
       objectReference: {fileID: 0}
     - target: {fileID: 4607789021669949657, guid: e22fad9e70ae94d42885f95bddd898ce, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 0.342
       objectReference: {fileID: 0}
     - target: {fileID: 4607789021669949657, guid: e22fad9e70ae94d42885f95bddd898ce, type: 3}
       propertyPath: m_LocalRotation.w

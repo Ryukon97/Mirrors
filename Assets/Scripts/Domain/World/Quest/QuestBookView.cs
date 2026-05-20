@@ -30,12 +30,15 @@ public class QuestBookView : MonoBehaviour
             .GetComponent<QuestBookTitleDivInstance>();
         titleDivs.Add(titleDiv);
 
+
         detailDiv = Instantiate(detailDivPrefab, questBookContent.transform)
             .GetComponent<QuestBookDetailDivInstance>();
         detailDivs.Add(detailDiv);
 
         titleDiv.titleTmpro.text = quest.title;
         detailDiv.detailTmpro.text = quest.description;
+        titleDiv.qid = quest.qid;
+        detailDiv.qid = quest.qid;
         titleDiv.gameObject.SetActive(true);
         detailDiv.gameObject.SetActive(false);
         titleDiv.OnToggled = () =>
@@ -62,13 +65,22 @@ public class QuestBookView : MonoBehaviour
         }
     }
 
+    public void ToggleView()
+    {
+        if (questBook.activeSelf)
+            HideView();
+        else
+            ShowView();
+    }
     public void ShowView()
     {
         questBook.SetActive(true);
+        PlayerSubState_Look.locks++;
     }
     public void HideView()
     {
         detailDivs.ForEach(div => div.gameObject.SetActive(false));
         questBook.SetActive(false);
+        PlayerSubState_Look.locks--;
     }
 }
