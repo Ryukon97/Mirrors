@@ -5,7 +5,6 @@ using UnityEngine.InputSystem;
 public class PlayerState_Attack : PlayerState_Base
 {
     const int MAX_ATTACK_TARGET = 3;
-    const float ATTACK_RANGE = 2f;
     const float ATTACK_RADIUS = 2.2f;
     Collider[] overlapedTargetedColliders = new Collider[MAX_ATTACK_TARGET];
 
@@ -56,9 +55,6 @@ public class PlayerState_Attack : PlayerState_Base
     }
     void SpawnAttack()
     {
-        var vfxTransform = player.AttackEffect.gameObject.transform;
-        vfxTransform.position = player.playerBody.transform.position + player.playerBody.transform.forward * ATTACK_RANGE;
-        vfxTransform.rotation = Quaternion.Euler(0, 0, Random.Range(-10f, 10f));
         player.AttackEffect.Play();
         TryDestroyTargets();
     }
