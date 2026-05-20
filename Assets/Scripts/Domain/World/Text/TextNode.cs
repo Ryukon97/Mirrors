@@ -11,6 +11,7 @@ public class TextNode : ScriptableObject
     public bool isSelection;
     public List<SingleTextNode> node;
     public TextNodeFinishedArgs finishedEvent;
+    public Sprite illust;
 }
 
 [Serializable]

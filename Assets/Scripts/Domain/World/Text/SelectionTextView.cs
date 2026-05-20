@@ -15,16 +15,16 @@ public class SelectionTextView : TextView
         selectionTextInstance.gameObject.SetActive(false);
     }
 
-    public override void UpdateView(string[] text)
+    public override void UpdateView(TextController.TextModel model)
     {
         if (selectionTextInstance.gameObject.activeSelf == false)
             selectionTextInstance.gameObject.SetActive(true);
 
         for(int i = 0; i < selectionTextInstance.tmpros.Count; i++)
         {
-            if (i < text.Length)
+            if (i < model.texts.Length)
             {
-                selectionTextInstance.tmpros[i].text = text[i];
+                selectionTextInstance.tmpros[i].text = model.texts[i];
                 selectionTextInstance.buttons[i].SetActive(true);
             }
             else
