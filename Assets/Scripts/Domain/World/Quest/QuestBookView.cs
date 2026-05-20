@@ -62,6 +62,13 @@ public class QuestBookView : MonoBehaviour
         }
     }
 
+    public void ToggleView()
+    {
+        if (questBook.activeSelf)
+            HideView();
+        else
+            ShowView();
+    }
     public void ShowView()
     {
         questBook.SetActive(true);
