@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using TMPro;
 
 public class BattleManager : MonoBehaviour
 {
@@ -16,6 +17,20 @@ public class BattleManager : MonoBehaviour
     public Transform timelineContainer;
     public GameObject playerIconPrefab;
     public GameObject enemyIconPrefab;
+
+    // ---------------- [복구 및 유지: 우측 상단 토탈 데미지 UI 변수] ----------------
+    [Header("Damage UI Settings")]
+    [Tooltip("이번 턴에 가한 총 누적 데미지를 표기할 우측 상단 텍스트 컴포넌트")]
+    public TextMeshProUGUI totalDamageText;
+
+    private int totalDamage = 0;
+    // ----------------------------------------------------------------------------
+
+    // ---------------- [유지: 플로팅 데미지 텍스트 프리랩 등록] ----------------
+    [Header("Damage Floating UI Settings")]
+    [Tooltip("적 머리 위에 띄울 3D TextMeshPro 기반의 DamageText 프리랩")]
+    public GameObject damageTextPrefab;
+    // ----------------------------------------------------------------------------
 
     [Header("Ultimate System")]
     public Button ultimateButton;
@@ -63,6 +78,7 @@ public class BattleManager : MonoBehaviour
         CurrentState = EBattleState.Start;
         UpdateUltimateUI();
         UpdateManaUI();
+        UpdateDamageUI(); // 시작할 때 토탈 데미지 텍스트 초기 정렬
         InitializeTimeline();
         DetermineNextTurn();
     }
@@ -73,6 +89,7 @@ public class BattleManager : MonoBehaviour
     {
         if (Time.timeScale == 0f) return;
         if (CurrentState != EBattleState.PlayerTurn) return;
+        ResetTurnDamage(); // 다음 공격 시작 시 이전 턴의 토탈 데미지 리셋
         StartCoroutine(PlayerTurnSequence());
     }
 
@@ -80,6 +97,7 @@ public class BattleManager : MonoBehaviour
     {
         if (Time.timeScale == 0f) return;
         if (CurrentState != EBattleState.PlayerTurn || currentMana < SKILL_COST) return;
+        ResetTurnDamage(); // 다음 공격 시작 시 이전 턴의 토탈 데미지 리셋
         StartCoroutine(ExecuteFullAOESkill());
     }
 
@@ -87,6 +105,7 @@ public class BattleManager : MonoBehaviour
     {
         if (Time.timeScale == 0f) return;
         if (CurrentState != EBattleState.PlayerTurn || currentGauge < MAX_GAUGE) return;
+        ResetTurnDamage(); // 다음 공격 시작 시 이전 턴의 토탈 데미지 리셋
         StartCoroutine(UltimateThreeHitSequence());
     }
 
@@ -94,6 +113,7 @@ public class BattleManager : MonoBehaviour
     {
         if (Time.timeScale == 0f) return;
         if (CurrentState != EBattleState.PlayerTurn) return;
+        ResetTurnDamage(); // 대기 버튼 시에도 리셋
         StartCoroutine(WaitTurnSequence());
     }
 
@@ -237,13 +257,8 @@ public class BattleManager : MonoBehaviour
                 isBossSpawned = true;
                 isVictoryLocked = true;
                 CurrentState = EBattleState.Busy;
-
-                // 보스 생성 완료 시점까지 완벽하게 스레드 홀딩
                 yield return StartCoroutine(BossEnemy.SpawnBossSetup(bossPrefab, bossSpawnPoint, this));
-
                 isVictoryLocked = false;
-
-                // 보스 턴 세팅이 완벽히 끝난 후 타임라인의 첫 주자(플레이어) 턴 개시
                 DetermineNextTurn();
             }
             else if (IsBossActuallyDead())
@@ -360,7 +375,6 @@ public class BattleManager : MonoBehaviour
                 }
                 else
                 {
-                    // 보스가 스스로 연출 코루틴을 작동시킵니다.
                     yield return StartCoroutine(boss.ExecuteMeleeAttackSequence(player.transform, qteManager));
                 }
             }
@@ -376,27 +390,20 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            // 보스 공격이 완전히 끝나 복귀하면 다음 순서로 턴 사이클을 넘깁니다.
             CycleFinishedUnit();
             yield return new WaitForSeconds(0.5f);
             DetermineNextTurn();
         }
     }
 
-    /// <summary>
-    /// [수정 핵심] 보스 전용 타임라인을 1:1 교대 구조로 길게 나열하여 턴 스킵/연속 공격 버그를 완전히 방지합니다.
-    /// </summary>
     public void SetupBossTimeline(BossEnemy boss)
     {
         turnTimeline.Clear();
-
-        // 플레이어 -> 보스 -> 플레이어 -> 보스 형태로 순서가 무한 순환되도록 넉넉하게 적재합니다.
         for (int i = 0; i < 4; i++)
         {
             turnTimeline.Add(new BattleUnitOrder { unitType = ECharacterType.Player, unitName = "Player" });
             turnTimeline.Add(new BattleUnitOrder { unitType = ECharacterType.Enemy, unitName = "BOSS", enemyReference = boss });
         }
-
         UpdateTimelineUI();
     }
 
@@ -411,7 +418,6 @@ public class BattleManager : MonoBehaviour
     private void InitializeTimeline()
     {
         turnTimeline.Clear();
-        // 기본 잡몹 단계 타임라인 초기화
         for (int i = 0; i < 2; i++) turnTimeline.Add(new BattleUnitOrder { unitType = ECharacterType.Player, unitName = "Player" });
         foreach (var e in enemies) turnTimeline.Add(new BattleUnitOrder { unitType = ECharacterType.Enemy, unitName = e.name, enemyReference = e });
         UpdateTimelineUI();
@@ -443,7 +449,6 @@ public class BattleManager : MonoBehaviour
         activeTimelineIcons.Clear();
         if (turnTimeline.Count == 0) return;
 
-        // 타임라인 상단 UI 배치 개수 통제 (최대 8개까지 노출)
         int displayCount = Mathf.Min(8, turnTimeline.Count);
         for (int i = 0; i < displayCount; i++)
         {
@@ -465,7 +470,54 @@ public class BattleManager : MonoBehaviour
     {
         if (bossPrefab != null && !isBossSpawned) return false;
         if (enemies.Count > 0) return false;
-
         return true;
     }
+
+    // ---------------- [수정 영역: 토탈 연산 및 플로팅 스폰 통합 처리] ----------------
+    /// <summary>
+    /// 외부(Enemy.cs)에서 데미지를 입었을 때 호출하여 토탈 누적량을 올리고 적 위에 숫자를 띄웁니다.
+    /// </summary>
+    public void SpawnDamageText(Vector3 worldPosition, int damageAmount)
+    {
+        // 1. 이번 턴에 가한 데미지를 실시간 누적시키고 우측 상단 UI 텍스트 새로고침
+        totalDamage += damageAmount;
+        UpdateDamageUI();
+
+        // 2. 적 머리 위에 플로팅 팝업 텍스트 프리랩 생성
+        if (damageTextPrefab == null) return;
+        Vector3 spawnPosition = worldPosition + Vector3.up * 2.0f;
+        GameObject dmgObj = Instantiate(damageTextPrefab, spawnPosition, Quaternion.identity);
+
+        if (Camera.main != null)
+        {
+            dmgObj.transform.forward = Camera.main.transform.forward;
+        }
+
+        DamageText dmgTextScript = dmgObj.GetComponent<DamageText>();
+        if (dmgTextScript != null)
+        {
+            dmgTextScript.Setup(damageAmount);
+        }
+    }
+
+    /// <summary>
+    /// 이번 턴의 총 누적 데미지를 우측 상단 UI 텍스트 컴포넌트에 반영
+    /// </summary>
+    private void UpdateDamageUI()
+    {
+        if (totalDamageText != null)
+        {
+            totalDamageText.text = $"TURN DAMAGE: <color=#FFCC00>{totalDamage}</color>";
+        }
+    }
+
+    /// <summary>
+    /// 플레이어 공격 행동 시작 시 턴 누적 수치를 0으로 리셋해 주는 함수
+    /// </summary>
+    private void ResetTurnDamage()
+    {
+        totalDamage = 0;
+        UpdateDamageUI();
+    }
+    // ----------------------------------------------------------------------------------
 }

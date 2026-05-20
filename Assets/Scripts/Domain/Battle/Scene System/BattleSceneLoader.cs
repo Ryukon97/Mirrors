@@ -50,6 +50,7 @@ public class BattleSceneLoader : MonoBehaviour
     {
         // 설정한 딜레이만큼 대기 (승리/패배 연출용)
         yield return new WaitForSeconds(transitionDelay);
+        RenderSettings.skybox.SetFloat("_Blend", 0);
 
         Debug.Log($"<color=magenta><b>[Debug]</b> 최종 전투 종료 후 씬 이동 시도 (대상: {mainSceneName})</color>");
 
