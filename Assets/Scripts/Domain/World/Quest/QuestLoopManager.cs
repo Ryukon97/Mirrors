@@ -48,7 +48,6 @@ public class QuestLoopManager : MonoBehaviour, IQuestLoopManager
         if (questDataContainer.Datas.ContainsKey(qid))
         {
             progressor.RemoveQuest(qid);
-            // rmv quest from quest book
         }
         else
         {

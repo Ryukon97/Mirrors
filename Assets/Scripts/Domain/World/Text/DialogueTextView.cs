@@ -14,11 +14,12 @@ public class DialogueTextView : TextView
         dialogueTextInstance.gameObject.SetActive(false);
     }
 
-    public override void UpdateView(string[] text)
+    public override void UpdateView(TextController.TextModel model)
     {
         if (dialogueTextInstance.gameObject.activeSelf == false)
             dialogueTextInstance.gameObject.SetActive(true);
-        dialogueTextInstance.contentTmpro.text = text[0];
+        dialogueTextInstance.illust.sprite = model.illust;
+        dialogueTextInstance.contentTmpro.text = model.texts[0];
     }
 
     public override void UpdateViewOwner(TextController ownerController)
