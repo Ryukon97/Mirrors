@@ -4,8 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using TMPro;
-using UnityEngine.Playables;
-using UnityEngine.Timeline;
+using UnityEngine.Playables; // 타임라인 재생용
+using UnityEngine.Timeline;  // 타임라인 데이터 수정용
 
 [RequireComponent(typeof(AudioSource))]
 public class BattleManager : MonoBehaviour
@@ -22,13 +22,10 @@ public class BattleManager : MonoBehaviour
     public GameObject enemyIconPrefab;
 
     [Header("Damage UI Settings")]
-    [Tooltip("이번 턴에 가한 총 누적 데미지를 표기할 우측 상단 텍스트 컴포넌트")]
     public TextMeshProUGUI totalDamageText;
-
     private int totalDamage = 0;
 
     [Header("Damage Floating UI Settings")]
-    [Tooltip("적 머리 위에 띄울 3D TextMeshPro 기반의 DamageText 프리랩")]
     public GameObject damageTextPrefab;
 
     [Header("Ultimate System")]
@@ -38,18 +35,16 @@ public class BattleManager : MonoBehaviour
     private const float MAX_GAUGE = 100f;
     private const float GAUGE_PER_ATTACK = 25f;
 
+    // ---------------- [수정: 타임라인 프리펩 할당] ----------------
     [Header("Ultimate Timeline Settings")]
-    [Tooltip("씬에 비활성화 상태로 배치해 둔 PlayableDirector 오브젝트")]
-    public PlayableDirector ultimateDirector;
+    [Tooltip("프로젝트 창에 있는 궁극기 타임라인 프리펩 파일을 드래그해서 넣으세요.")]
+    public GameObject ultimateTimelinePrefab;
+    // -----------------------------------------------------------
 
     [Header("Audio Settings (SFX)")]
-    [Tooltip("평타(일반 공격) 시 재생할 사운드 클립")]
     public AudioClip normalAttackSFX;
-    [Tooltip("스킬 공격 시 재생할 사운드 클립")]
     public AudioClip skillAttackSFX;
-    [Tooltip("궁극기 타격 시 재생할 사운드 클립")]
     public AudioClip ultimateAttackSFX;
-
     private AudioSource audioSource;
 
     [Header("Mana System")]
@@ -199,27 +194,49 @@ public class BattleManager : MonoBehaviour
         yield return StartCoroutine(FinishPlayerTurn());
     }
 
+    // ---------------- [수정: 프리펩을 생성하여 궁극기 연출 재생] ----------------
     private IEnumerator UltimateThreeHitSequence()
     {
         CurrentState = EBattleState.Busy;
         currentGauge = 0f;
         UpdateUltimateUI();
 
-        if (ultimateDirector != null)
+        if (ultimateTimelinePrefab != null)
         {
-            Debug.Log("<color=cyan>궁극기 컷신 오브젝트 활성화 및 재생</color>");
-            ultimateDirector.gameObject.SetActive(true);
-            ultimateDirector.Play();
+            // 1. 프리펩을 씬에 생성합니다.
+            GameObject timelineInstance = Instantiate(ultimateTimelinePrefab);
+            PlayableDirector director = timelineInstance.GetComponent<PlayableDirector>();
 
-            while (ultimateDirector.state == PlayState.Playing)
+            if (director != null)
             {
-                yield return null;
-            }
+                // [자동 바인딩 로직] 프리펩 타임라인의 트랙에 플레이어와 카메라를 꽂아줍니다.
+                TimelineAsset asset = director.playableAsset as TimelineAsset;
+                foreach (var track in asset.GetOutputTracks())
+                {
+                    // 트랙 이름에 "Player"가 들어가면 플레이어 바인딩
+                    if (track.name.Contains("Player") && player != null)
+                        director.SetGenericBinding(track, player.gameObject);
 
-            Debug.Log("<color=cyan>궁극기 연출 완수. 오브젝트 다시 비활성화</color>");
-            ultimateDirector.gameObject.SetActive(false);
+                    // 트랙 이름에 "Camera"가 들어가면 메인 카메라 바인딩
+                    else if (track.name.Contains("Camera") && Camera.main != null)
+                        director.SetGenericBinding(track, Camera.main.gameObject);
+                }
+
+                // 2. 재생
+                director.Play();
+
+                // 3. 연출이 끝날 때까지 기다립니다.
+                while (director.state == PlayState.Playing)
+                {
+                    yield return null;
+                }
+
+                // 4. 연출이 끝나면 프리펩 인스턴스를 삭제합니다.
+                Destroy(timelineInstance);
+            }
         }
 
+        // 연출 종료 후 기존 하던 3연타 타격 처리
         for (int i = 0; i < 3; i++)
         {
             CheckTargetHealth();
@@ -242,8 +259,6 @@ public class BattleManager : MonoBehaviour
     private IEnumerator WaitTurnSequence()
     {
         CurrentState = EBattleState.Busy;
-        Debug.Log("<color=yellow>대기: 모든 적의 반격 자세를 파훼하고 재정비합니다.</color>");
-
         foreach (var e in enemies)
         {
             if (e is BossEnemy boss) boss.DisableCounterMode();
@@ -369,7 +384,6 @@ public class BattleManager : MonoBehaviour
         if (nextUnit.unitType == ECharacterType.Player)
         {
             CurrentState = EBattleState.PlayerTurn;
-            Debug.Log("<color=green>[Turn] 플레이어 차례입니다. UI 활성화 완료.</color>");
         }
         else
         {
@@ -384,10 +398,9 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    // ---------------- [완벽 복구: 적 인공지능 공격 시퀀스] ----------------
     private IEnumerator EnemyTurnSequence()
     {
-        CurrentState = EBattleState.Busy; // 올바른 에넘 상태 지정
+        CurrentState = EBattleState.Busy;
         BattleUnitOrder currentUnit = turnTimeline[0];
         Enemy actingEnemy = currentUnit.enemyReference;
 
@@ -430,7 +443,6 @@ public class BattleManager : MonoBehaviour
             DetermineNextTurn();
         }
     }
-    // ---------------------------------------------------------------------
 
     public void SetupBossTimeline(BossEnemy boss)
     {
@@ -446,7 +458,6 @@ public class BattleManager : MonoBehaviour
     private void SetBattleState(EBattleState newState)
     {
         if (newState == EBattleState.Won && isVictoryLocked) return;
-
         var field = typeof(BattleManager).GetProperty("CurrentState");
         if (field != null) field.SetValue(this, newState);
     }
