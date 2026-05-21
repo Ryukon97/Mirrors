@@ -53,11 +53,13 @@ public class InventoryView: MonoBehaviour
     {
         inventoryRootUIObj.SetActive(true);
         PlayerSubState_Look.locks++;
+        PlayerSubState_Move.locks++;
     }
     private void CloseView()
     {
         inventoryRootUIObj.SetActive(false);
         PlayerSubState_Look.locks--;
+        PlayerSubState_Move.locks--;
     }
 
     // ------------ Event Listeners
