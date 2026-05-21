@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,10 +7,11 @@ public class PlayerSubState_Look : PlayerSubState_Base
 	float xRotation = 0f;
 	float yRotation = 0f;
 	InputAction lookAction = PlayerInputReciever.Instance.LookAction;
+	public static int locks;
 	public PlayerSubState_Look() : base()
 	{
-
-	}
+		locks = 0;
+    }
 	public override void OnEnter(PlayerState_Base baseState, Player player)
 	{
 
@@ -17,6 +19,8 @@ public class PlayerSubState_Look : PlayerSubState_Base
 
 	public override void OnUpdate(PlayerState_Base baseState, Player player)
 	{
+		if (locks > 0) return;
+
 		Vector2 v = lookAction.ReadValue<Vector2>();
 		if (v.magnitude < 0.1f) return;
 
@@ -29,7 +33,6 @@ public class PlayerSubState_Look : PlayerSubState_Base
 
 		// 2. Apply once using a single Quaternion
 		player.camTarget.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
-		player.forwardCamTarget.localRotation = Quaternion.Euler(0, yRotation, 0f);
 	}
 
 	public override void OnExit(PlayerState_Base baseState, Player player)

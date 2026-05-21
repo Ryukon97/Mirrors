@@ -21,12 +21,14 @@ public class PlayerInputReciever
 	public InputAction LookAction { get; private set; }
 	public InputAction MoveAction { get; private set; }
 	public InputAction SprintAction { get; private set; }
-	
-	PlayerInputReciever()
+    public InputAction AttackAction { get; private set; }
+
+    PlayerInputReciever()
 	{
 		InteractAction = InputSystem.actions.FindAction("Interact");
 		LookAction = InputSystem.actions.FindAction("Look");
 		MoveAction = InputSystem.actions.FindAction("Move");
         SprintAction = InputSystem.actions.FindAction("Sprint");
+		AttackAction = InputSystem.actions.FindAction("Attack");
 	}
 }

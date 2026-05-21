@@ -22,7 +22,13 @@ public class QTEManager : MonoBehaviour
     {
         if (!isActive) return;
 
-        // [수정] unscaledDeltaTime을 사용하여 전체 슬로우 모션과 관계없이 바늘은 일정한 속도로 회전함
+        // [핵심 수정] 타임스케일이 0(일시정지) 상태라면 바늘 회전과 입력 감지를 모두 강제로 패스합니다.
+        if (Time.timeScale == 0f)
+        {
+            return;
+        }
+
+        // unscaledDeltaTime을 사용하더라도 위에서 튕겨내기 때문에 일시정지 시 바늘이 완벽히 멈춤
         needle.Rotate(Vector3.back * rotationSpeed * Time.unscaledDeltaTime);
 
         // New Input System 사용 시

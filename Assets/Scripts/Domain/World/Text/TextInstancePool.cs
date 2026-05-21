@@ -17,7 +17,7 @@ public class TextInstancePool : MonoBehaviour
     [Header("Balloon Text")]
     [SerializeField] GameObject balloonTextPrefab;
     BalloonTextInstance[] balloonTextInstances = new BalloonTextInstance[MAX_BALLOON_CNT];
-    const int MAX_BALLOON_CNT = 20;
+    const int MAX_BALLOON_CNT = 10;
 
     private void Awake()
     {

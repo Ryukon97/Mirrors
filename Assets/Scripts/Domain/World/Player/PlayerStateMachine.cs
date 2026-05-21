@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerStateMachine
 {
@@ -6,6 +7,7 @@ public class PlayerStateMachine
 
 	public PlayerState_Watch interactingState;
 	public PlayerState_Normal normalState;
+	public PlayerState_Attack attackState;
 
 	public PlayerStateMachine(Player player)
 	{
@@ -16,10 +18,15 @@ public class PlayerStateMachine
 
         normalState = new PlayerState_Normal(this, player, new PlayerSubState_Base[]{ move, look, interact});
         interactingState = new PlayerState_Watch(this, player, new PlayerSubState_Base[] { playNextNode });
+		attackState = new PlayerState_Attack(this, player, new PlayerSubState_Base[] { look });
 
 		curState = normalState;
 		curState.OnEnter();
-	}
+    }
+	public void OnDestroy()
+	{
+        curState.OnExit();
+    }
 	public bool IsState<T>() where T :PlayerState_Base => curState is T;
 	public void ChangeState(PlayerState_Base state)
 	{

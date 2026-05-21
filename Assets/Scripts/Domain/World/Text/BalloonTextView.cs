@@ -9,7 +9,8 @@ public class BalloonTextView : TextView
     float viewRequestedTime;
     public override void InitView()
     {
-
+        balloonInstance = TextInstancePool.Instance.GetBalloonTextInstance();
+        balloonInstance.gameObject.SetActive(false);
     }
     public override void HideView()
     {
@@ -25,19 +26,18 @@ public class BalloonTextView : TextView
             balloonInstance.gameObject.SetActive(false);
         }
     }
-    public override void UpdateView(string[] text)
+    public override void UpdateView(TextController.TextModel model)
     {
-        if (balloonInstance == null)
-        {
-            balloonInstance = TextInstancePool.Instance.GetBalloonTextInstance();
-            balloonInstance.transform.position = gameObject.transform.position + offset;
-            balloonInstance.gameObject.SetActive(false);
-        }
-
         if (balloonInstance.gameObject.activeSelf == false)
             balloonInstance.gameObject.SetActive(true);
 
-        balloonInstance.tmpro.text = text[0];
+        balloonInstance.tmpro.text = model.texts[0];
         viewRequestedTime = Time.time;
+    }
+
+    public override void UpdateViewOwner(TextController ownerController)
+    {
+        balloonInstance.transform.position = ownerController.transform.position + offset;
+        balloonInstance.transform.rotation.SetLookRotation(ownerController.transform.forward);
     }
 }
