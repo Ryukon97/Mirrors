@@ -14,18 +14,18 @@ public class BattleCharacter : MonoBehaviour
     [SerializeField] private int maxHp = 100;
     private int currentHp;
 
-    [Header("Damage Settings")] // 데미지 수치 통합 관리
+    [Header("Damage Settings")]
     [SerializeField] private int normalAttackDamage = 25;
-    [SerializeField] private int skillDamage = 40;        // 스킬 데미지 상향 (기존 30 -> 60)
-    [SerializeField] private int ultimateDamage = 25;     // 궁극기 타당 데미지
+    [SerializeField] private int skillDamage = 40;
+    [SerializeField] private int ultimateDamage = 120;     // 궁극기 기본 대미지 (120)
 
     [Header("UI")]
     public Image hpBarImage;
 
     [Header("Effects")]
-    public GameObject hitEffectPrefab;      // 일반 타격 이펙트
-    public GameObject skillCastEffectPrefab; // [추가] 스킬 시전 시 캐릭터에게 나올 이펙트
-    public GameObject skillHitEffectPrefab;  // [추가] 스킬 타격 시 적들에게 터질 이펙트
+    public GameObject hitEffectPrefab;
+    public GameObject skillCastEffectPrefab;
+    public GameObject skillHitEffectPrefab;
 
     private Vector3 originalPosition;
     private Quaternion originalRotation;
@@ -37,7 +37,13 @@ public class BattleCharacter : MonoBehaviour
     public int CurrentHp => currentHp;
     public int NormalAttackDamage => normalAttackDamage;
     public int SkillDamage => skillDamage;
-    public int UltimateDamage => ultimateDamage;
+    public int UltimateDamage => ultimateDamage; // BattleManager에서 이 값을 가져갑니다.
+
+    // ---------------- [추가: 플레이어 피격 컬러 변경용 변수] ----------------
+    private List<Renderer> playerRenderers = new List<Renderer>();
+    private List<Color[]> originalColors = new List<Color[]>();
+    private Coroutine hitFlashCoroutine;
+    // ----------------------------------------------------------------------
 
     private void Awake()
     {
@@ -45,44 +51,49 @@ public class BattleCharacter : MonoBehaviour
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
 
-        // Awake 시점에 최초 배치된 위치와 회전값을 정확히 기억합니다.
         originalPosition = transform.position;
         originalRotation = transform.rotation;
+
+        // ---------------- [추가: 플레이어 본체 및 자식들의 모든 렌더러와 원래 색상 백업] ----------------
+        var skinned = GetComponentsInChildren<SkinnedMeshRenderer>();
+        var mesh = GetComponentsInChildren<MeshRenderer>();
+
+        playerRenderers.AddRange(skinned);
+        playerRenderers.AddRange(mesh);
+
+        foreach (var renderer in playerRenderers)
+        {
+            Color[] colors = new Color[renderer.materials.Length];
+            for (int i = 0; i < renderer.materials.Length; i++)
+            {
+                colors[i] = renderer.materials[i].color;
+            }
+            originalColors.Add(colors);
+        }
+        // --------------------------------------------------------------------------------------------
     }
 
     private void Start()
     {
         currentHp = maxHp;
-
-        // Start 시점에도 애니메이션 초기화 등으로 밀리는 것을 방지하기 위해 재고정
         transform.position = originalPosition;
         transform.rotation = originalRotation;
-
         UpdateHpUI();
     }
 
     public void Heal(int amount)
     {
         currentHp += amount;
-
-        // 최대 체력을 넘지 않도록 제한
         if (currentHp > maxHp) currentHp = maxHp;
-
         Debug.Log($"<color=green>[Heal]</color> {amount} 회복! (현재: {currentHp}/{maxHp})");
-
-        // HP UI 업데이트 (기존 메서드 호출)
         UpdateHpUI();
     }
 
-    // ---------------------------------------------------------
-    // [핵심 수정] 공격 시퀀스: 어떤 타입의 공격인지 인자를 추가로 받음
-    // ---------------------------------------------------------
     public IEnumerator AttackSequence(Enemy target, string attackType = "Normal")
     {
         if (isAttacking) yield break;
         isAttacking = true;
 
-        // 공격 시작 전 적을 향해 회전
         if (target != null)
         {
             Vector3 targetDirection = new Vector3(target.transform.position.x, transform.position.y, target.transform.position.z);
@@ -114,8 +125,6 @@ public class BattleCharacter : MonoBehaviour
         else
         {
             if (anim != null) anim.SetBool("Attack", true);
-
-            // 앞으로 날아가서 타격하는 타이밍까지 대기 (1.6초)
             yield return new WaitForSeconds(1.6f);
 
             if (hitEffectPrefab != null && target != null)
@@ -124,30 +133,20 @@ public class BattleCharacter : MonoBehaviour
                 Destroy(effect, 1.5f);
             }
 
-            // 타격 후 후속 모션 대기 (0.3초)
             yield return new WaitForSeconds(0.3f);
-
-            // 애니메이션 종료 요청 (Idle 복귀 시작)
             if (anim != null) anim.SetBool("Attack", false);
-
-            // 앞으로 날아갔던 애니메이션 연산이 끝날 수 있도록 한 프레임 대기 후 다음 로직 수행
             yield return null;
         }
 
-        // --- 밀림 및 방향 틀어짐 방지 핵심 로직 (보강됨) ---
-
-        // 1. 애니메이션 이동으로 쌓인 물리 속도 완전히 리셋
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
 
-        // 2. 처음 시작할 때의 절대 좌표와 정면 회전값으로 덮어쓰기
         transform.position = originalPosition;
         transform.rotation = originalRotation;
 
-        // 3. 애니메이션 상태가 완벽히 Idle로 전환될 때까지 확실하게 좌표를 고정 (0.2초간 매 프레임 고정)
         float elapsed = 0f;
         while (elapsed < 0.2f)
         {
@@ -162,6 +161,7 @@ public class BattleCharacter : MonoBehaviour
         isAttacking = false;
     }
 
+    // ---------------- [수정: 피격 연출 코루틴 작동 처리] ----------------
     public void TakeDamage(int damage)
     {
         currentHp -= damage;
@@ -170,8 +170,40 @@ public class BattleCharacter : MonoBehaviour
         UpdateHpUI();
         PlayerHittedEvent?.Invoke();
 
+        // 연속으로 맞았을 때 색상이 붉은 상태로 굳는 버그 방지용 예외 처리
+        if (hitFlashCoroutine != null) StopCoroutine(hitFlashCoroutine);
+        hitFlashCoroutine = StartCoroutine(HitFlashSequence());
+
         if (currentHp <= 0) Debug.Log("<color=black>플레이어 사망</color>");
     }
+
+    // ---------------- [추가: 피격 시 마테리얼 깜빡임 코루틴] ----------------
+    private IEnumerator HitFlashSequence()
+    {
+        // 1. 플레이어 몸 전체 메테리얼을 붉은색으로 물들임
+        for (int r = 0; r < playerRenderers.Count; r++)
+        {
+            if (playerRenderers[r] == null) continue;
+            for (int m = 0; m < playerRenderers[r].materials.Length; m++)
+            {
+                playerRenderers[r].materials[m].color = new Color(1f, 0.15f, 0.15f);
+            }
+        }
+
+        // 0.2초 동안 유지 (대미지를 입었다는 시각적 피드백 제공)
+        yield return new WaitForSeconds(0.2f);
+
+        // 2. 백업해 뒀던 순수한 고유 원본 색상으로 완벽 롤백
+        for (int r = 0; r < playerRenderers.Count; r++)
+        {
+            if (playerRenderers[r] == null) continue;
+            for (int m = 0; m < playerRenderers[r].materials.Length; m++)
+            {
+                playerRenderers[r].materials[m].color = originalColors[r][m];
+            }
+        }
+    }
+    // ----------------------------------------------------------------------
 
     public void UpdateHpUI()
     {
