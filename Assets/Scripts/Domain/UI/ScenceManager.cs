@@ -13,6 +13,9 @@ public class SceneLoader : MonoBehaviour
     }
     public void NextSence()
     {
-        SceneManager.LoadScene("Test_KYO");
+        if (FadeInOutManager.Instance != null)
+            _ = FadeInOutManager.Instance.DoSomethingBtwFadingAsync(() => SceneManager.LoadScene("Test_KYO"));
+        else
+            SceneManager.LoadScene("Test_KYO");
     }
 }
