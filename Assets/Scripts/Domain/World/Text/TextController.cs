@@ -42,26 +42,18 @@ public class TextController : MonoBehaviour
     }
     public bool PlayCurrentNode()
     {
-        Debug.Log("PlayerCurrentNode_1");
         HideView();
-        Debug.Log("PlayerCurrentNode_2");
         if (textNode == null)
         {
             EndNodeChain();
             return false;
         }
-        Debug.Log("PlayerCurrentNode_3");
         OnTextNodeStarted?.Invoke(new TextNodeStartedArgs(textNode.id));
-        Debug.Log("PlayerCurrentNode_4");
         SetModelByViewType(textNode.viewType);
-        Debug.Log("PlayerCurrentNode_5");
         SetViewByViewType(textNode.viewType);
-        Debug.Log("PlayerCurrentNode_6");
         model.illust = textNode.illust;
-        Debug.Log("PlayerCurrentNode_7");
 
         RequestView();
-        Debug.Log("PlayerCurrentNode_8");
         return true;
     }
     public void SetAndPlayNode(TextNode textNode)
