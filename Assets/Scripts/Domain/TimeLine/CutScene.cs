@@ -1,36 +1,48 @@
 using UnityEngine;
 using UnityEngine.Playables;
 using Unity.Cinemachine;
+
 public class CutScene : MonoBehaviour
 {
-    [Header("Cut Scene")]
+    [Header("Cut Scene Elements")]
     public PlayableDirector playableDirector;
     public CinemachineCamera[] CutSceneCamera;
 
-    public void UltimateSkill() // 컷씬 호출
+  
+    public void UltimateSkill()
     {
-        foreach (var cam in CutSceneCamera)
-        {
-            if (cam != null)
-            {
-                cam.Priority = 20;
-            }
-        }
-        if (playableDirector != null)
-        {
-            playableDirector.stopped -= OnCutsceneEnded;
-            playableDirector.stopped += OnCutsceneEnded;
-            playableDirector.Play();
-        }
+      
+
+     
+        this.gameObject.SetActive(true);
+
+        Invoke(nameof(PlayTimelineDelayed), 0.05f);
     }
-    private void OnCutsceneEnded(PlayableDirector director) // 컷씬 종료 호출
+
+    private void PlayTimelineDelayed()
     {
         foreach (var cam in CutSceneCamera)
         {
-            if (cam != null)
-            {
-                cam.Priority = 0;
-            }
+            if (cam != null) cam.Priority = 20;
         }
+
+        playableDirector.stopped -= OnCutsceneEnded;
+        playableDirector.stopped += OnCutsceneEnded;
+
+        playableDirector.Play();
+       
+    }
+
+    private void OnCutsceneEnded(PlayableDirector director)
+    {
+   
+
+        foreach (var cam in CutSceneCamera)
+        {
+            if (cam != null) cam.Priority = 0;
+        }
+
+        this.gameObject.SetActive(false);
+        
     }
 }
