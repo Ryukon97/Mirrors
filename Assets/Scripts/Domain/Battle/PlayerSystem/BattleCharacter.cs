@@ -39,6 +39,12 @@ public class BattleCharacter : MonoBehaviour
     public int SkillDamage => skillDamage;
     public int UltimateDamage => ultimateDamage; // BattleManager에서 이 값을 가져갑니다.
 
+    // ---------------- [추가: 플레이어 피격 컬러 변경용 변수] ----------------
+    private List<Renderer> playerRenderers = new List<Renderer>();
+    private List<Color[]> originalColors = new List<Color[]>();
+    private Coroutine hitFlashCoroutine;
+    // ----------------------------------------------------------------------
+
     private void Awake()
     {
         currentHp = maxHp;
@@ -47,6 +53,24 @@ public class BattleCharacter : MonoBehaviour
 
         originalPosition = transform.position;
         originalRotation = transform.rotation;
+
+        // ---------------- [추가: 플레이어 본체 및 자식들의 모든 렌더러와 원래 색상 백업] ----------------
+        var skinned = GetComponentsInChildren<SkinnedMeshRenderer>();
+        var mesh = GetComponentsInChildren<MeshRenderer>();
+
+        playerRenderers.AddRange(skinned);
+        playerRenderers.AddRange(mesh);
+
+        foreach (var renderer in playerRenderers)
+        {
+            Color[] colors = new Color[renderer.materials.Length];
+            for (int i = 0; i < renderer.materials.Length; i++)
+            {
+                colors[i] = renderer.materials[i].color;
+            }
+            originalColors.Add(colors);
+        }
+        // --------------------------------------------------------------------------------------------
     }
 
     private void Start()
@@ -137,6 +161,7 @@ public class BattleCharacter : MonoBehaviour
         isAttacking = false;
     }
 
+    // ---------------- [수정: 피격 연출 코루틴 작동 처리] ----------------
     public void TakeDamage(int damage)
     {
         currentHp -= damage;
@@ -145,8 +170,40 @@ public class BattleCharacter : MonoBehaviour
         UpdateHpUI();
         PlayerHittedEvent?.Invoke();
 
+        // 연속으로 맞았을 때 색상이 붉은 상태로 굳는 버그 방지용 예외 처리
+        if (hitFlashCoroutine != null) StopCoroutine(hitFlashCoroutine);
+        hitFlashCoroutine = StartCoroutine(HitFlashSequence());
+
         if (currentHp <= 0) Debug.Log("<color=black>플레이어 사망</color>");
     }
+
+    // ---------------- [추가: 피격 시 마테리얼 깜빡임 코루틴] ----------------
+    private IEnumerator HitFlashSequence()
+    {
+        // 1. 플레이어 몸 전체 메테리얼을 붉은색으로 물들임
+        for (int r = 0; r < playerRenderers.Count; r++)
+        {
+            if (playerRenderers[r] == null) continue;
+            for (int m = 0; m < playerRenderers[r].materials.Length; m++)
+            {
+                playerRenderers[r].materials[m].color = new Color(1f, 0.15f, 0.15f);
+            }
+        }
+
+        // 0.2초 동안 유지 (대미지를 입었다는 시각적 피드백 제공)
+        yield return new WaitForSeconds(0.2f);
+
+        // 2. 백업해 뒀던 순수한 고유 원본 색상으로 완벽 롤백
+        for (int r = 0; r < playerRenderers.Count; r++)
+        {
+            if (playerRenderers[r] == null) continue;
+            for (int m = 0; m < playerRenderers[r].materials.Length; m++)
+            {
+                playerRenderers[r].materials[m].color = originalColors[r][m];
+            }
+        }
+    }
+    // ----------------------------------------------------------------------
 
     public void UpdateHpUI()
     {
