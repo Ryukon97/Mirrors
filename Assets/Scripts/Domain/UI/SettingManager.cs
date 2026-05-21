@@ -1,31 +1,20 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
-using System.Collections;
-using UnityEngine.InputSystem;
-using UnityEngine.EventSystems;
 
 public class SettingManager : MonoBehaviour
 {
-    
     [Header("UI 패널")]
     public GameObject SettingPanel;    
     public GameObject PanelVolume;     
     public GameObject PanelOther;      
-     
-    public bool IsPausedByMenu;      
 
     [Header("밝기 조절")]
     public Image BrightnessOverlay;
     public Slider BrightnessSlider;
 
     [Header("사운드 조절")]
-    public Slider SoundSlider;          
-         
-    public AudioSource IntroAudioSource;
-   
+    public Slider SoundSlider;
 
-   
     private void Start()
     {
         InitializeSettings();
@@ -38,18 +27,6 @@ public class SettingManager : MonoBehaviour
 
         ShowVolumeTab();
     }
-
-    private void Update()
-    {
-        if (IsPausedByMenu)
-        {
-            return;
-        }
-    }
-
-   
-
-    public void ToggleSettingPanel(bool isActive) => SettingPanel?.SetActive(isActive);
 
     public void ShowVolumeTab()
     {
@@ -77,8 +54,6 @@ public class SettingManager : MonoBehaviour
 
     public void SetSound(float value) => AudioListener.volume = value;
 
-  
-
     public void SaveSettings()
     {
         PlayerPrefs.SetFloat("SavedBrightness", BrightnessSlider.value);
@@ -93,11 +68,6 @@ public class SettingManager : MonoBehaviour
         if (SettingPanel != null)
         {
             SettingPanel.SetActive(true);
-            IsPausedByMenu = true;
-
-            
-
-            Time.timeScale = 0f;
         }
     }
 
@@ -110,14 +80,6 @@ public class SettingManager : MonoBehaviour
         }
     }
 
-  
-
-  
-
-    public void StopIntroBgm()
-    {
-        if (IntroAudioSource != null) IntroAudioSource.Stop();
-    }
 
     public void GameExit()
     {
@@ -127,8 +89,6 @@ public class SettingManager : MonoBehaviour
         Application.Quit();
 #endif
     }
-
-
 
     private void InitializeSettings()
     {
@@ -150,26 +110,7 @@ public class SettingManager : MonoBehaviour
             SoundSlider.onValueChanged.AddListener(SetSound);
         }
 
-      
-
         SetBrightness(savedBrightness);
         SetSound(savedSound);
-      
-    }
-
-    public void ConfirmResume()
-    {
-        SaveSettings();
-        ResumeGame();
-    }
-
-    private void ResumeGame()
-    {
-        if (SettingPanel != null) SettingPanel.SetActive(false);
-
-        IsPausedByMenu = false;
-      
-
-        Time.timeScale = 1f;
     }
 }
