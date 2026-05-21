@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using UnityEngine.InputSystem;
+using UnityEngine.InputSystem; // New Input System 마우스/터치 대응
 
 public class QTEManager : MonoBehaviour
 {
@@ -13,12 +13,11 @@ public class QTEManager : MonoBehaviour
     private float rotationSpeed = 300f;
     private Action<bool> onQTEFinished;
 
-    // ---------------- [수정: 성공 구역 기준 제한 시간 변수들] ----------------
+    // 성공 구역 기준 제한 시간 변수들
     private float totalRotatedAngle = 0f;
     private bool hasPassedSuccessZone = false;
     private float targetSuccessAngle = 0f;
-    private float timeoutLimitAngle = 9999f; // 타임아웃 컷트라인 각도
-    // ----------------------------------------------------------------------
+    private float timeoutLimitAngle = 9999f;
 
     private void Start()
     {
@@ -47,15 +46,12 @@ public class QTEManager : MonoBehaviour
             if (totalRotatedAngle >= targetSuccessAngle)
             {
                 hasPassedSuccessZone = true;
-
-                // [핵심] 성공 구역을 지나간 이 시점부터 정확히 380도만큼 더 돌 수 있게 제한 컷트라인을 설정합니다.
-                // 이로 인해 첫 진입 기회 + 한 바퀴 돌아서 오는 2번째 기회(대략 총 380도 구간)까지 살려둡니다.
                 timeoutLimitAngle = targetSuccessAngle + 380f;
                 Debug.Log("<color=yellow>[QTE] 성공 구역 최초 통과! 2번째 기회 구간 개방.</color>");
             }
         }
 
-        // 4. [수정 핵심] 성공 구역을 기준으로 380도 이상 돌아갔다면 기회 종료 (자동 실패)
+        // 4. 성공 구역을 기준으로 380도 이상 돌아갔다면 기회 종료 (자동 실패)
         if (totalRotatedAngle >= timeoutLimitAngle)
         {
             Debug.Log("<color=red>TIMEOUT! 기회 2번을 모두 놓치고 제한 범위를 벗어나 실패했습니다.</color>");
@@ -63,11 +59,15 @@ public class QTEManager : MonoBehaviour
             return;
         }
 
-        // New Input System 입력 감지
-        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+        // ---------------- [수정 핵심: 스페이스바 OR 화면 아무 곳이나 마우스 클릭/터치 감지] ----------------
+        bool isSpacePressed = Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
+        bool isClicked = Pointer.current != null && Pointer.current.press.wasPressedThisFrame;
+
+        if (isSpacePressed || isClicked)
         {
             CheckSuccess();
         }
+        // --------------------------------------------------------------------------------------------------
     }
 
     public void StartQTE(Action<bool> callback)
@@ -79,13 +79,13 @@ public class QTEManager : MonoBehaviour
         // 변수들 초기화
         totalRotatedAngle = 0f;
         hasPassedSuccessZone = false;
-        timeoutLimitAngle = 9999f; // 아직 성공 구역을 지나기 전이므로 임시 맥스값
+        timeoutLimitAngle = 9999f;
 
         // 성공 영역 랜덤 설정 (0 ~ 360)
         float randomZ = UnityEngine.Random.Range(0f, 360f);
         successZone.localRotation = Quaternion.Euler(0, 0, randomZ);
 
-        // 바늘이 Vector3.back(우회전)하므로 360도에서 빼주어야 정확한 도달 누적 각도가 나옵니다.
+        // 바늘이 우회전하므로 도달 누적 각도로 환산
         targetSuccessAngle = 360f - randomZ;
 
         // 바늘 위치 초기화 (0도)
