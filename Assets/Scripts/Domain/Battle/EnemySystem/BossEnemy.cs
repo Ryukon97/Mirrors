@@ -118,20 +118,26 @@ public class BossEnemy : Enemy
         yield return new WaitForSeconds(1.0f);
     }
 
+    /// <summary>
+    /// 보스 일반 평타 기믹 함수 (회전 코드 전면 제거, 오직 순수 위치 이동만 수행)
+    /// </summary>
     public IEnumerator ExecuteMeleeAttackSequence(Transform playerTransform, QTEManager qteManager)
     {
+        // 1. 시작할 때 서 있던 순수한 원래 좌표 기억
         Vector3 startPos = transform.position;
-        Vector3 targetPos = playerTransform.position + playerTransform.forward * attackDistance;
-        targetPos.y = transform.position.y;
 
-        transform.LookAt(new Vector3(playerTransform.position.x, transform.position.y, playerTransform.position.z));
+        // [회전 없이 좌표만 연산] 보스와 캐릭터 사이의 순수한 직선 방향 좌표를 계산하여 캐릭터 앞 위치 설정
+        Vector3 directionToPlayer = (playerTransform.position - startPos).normalized;
+        Vector3 targetPos = playerTransform.position - directionToPlayer * attackDistance;
+        targetPos.y = startPos.y; // 높이 고정
 
         if (bossAnim != null)
         {
             bossAnim.SetTrigger("Attack");
-            Debug.Log("<color=cyan>[Animation] 돌진과 동시에 보스 공격 애니메이션 트리거 선발동</color>");
+            Debug.Log("<color=cyan>[Animation] 보스 공격 애니메이션 트리거 발동</color>");
         }
 
+        // 2. 캐릭터 앞으로 돌진 기동 (회전 조작 없이 서 있는 각도 그대로 좌표만 이동)
         float elapsed = 0f;
         while (elapsed < 0.25f)
         {
@@ -143,6 +149,7 @@ public class BossEnemy : Enemy
 
         yield return new WaitForSeconds(0.12f);
 
+        // 3. 극적인 극소 슬로우 모션 및 QTE UI 개방
         if (bossAnim != null) bossAnim.updateMode = AnimatorUpdateMode.UnscaledTime;
 
         Time.timeScale = 0.15f;
@@ -159,10 +166,7 @@ public class BossEnemy : Enemy
                 isQteFinished = true;
             });
 
-            while (!isQteFinished)
-            {
-                yield return null;
-            }
+            while (!isQteFinished) yield return null;
         }
         else
         {
@@ -175,10 +179,11 @@ public class BossEnemy : Enemy
 
         if (bossAnim != null) bossAnim.updateMode = AnimatorUpdateMode.Normal;
 
+        // 결과 데미지 연산
         BattleCharacter player = playerTransform.GetComponent<BattleCharacter>();
         if (isQteSuccess)
         {
-            Debug.Log("<color=green>[QTE 성공] 플레이어가 보스의 내려치기를 회피했습니다.</color>");
+            Debug.Log("<color=green>[QTE 성공] 플레이어가 보스의 공격을 회피했습니다.</color>");
         }
         else
         {
@@ -188,8 +193,7 @@ public class BossEnemy : Enemy
 
         yield return new WaitForSeconds(0.4f);
 
-        transform.LookAt(new Vector3(startPos.x, transform.position.y, startPos.z));
-
+        // 4. 원래 자리로 직선 복귀 (그 각도 상태 그대로 좌표만 원래 위치로 슬라이딩)
         elapsed = 0f;
         while (elapsed < 0.25f)
         {
@@ -198,17 +202,20 @@ public class BossEnemy : Enemy
             yield return null;
         }
         transform.position = startPos;
-
-        transform.rotation = bossOriginalRot;
     }
 
+    /// <summary>
+    /// 보스 반격기 기믹 함수 (회전 코드 전면 제거, 오직 순수 위치 이동만 수행)
+    /// </summary>
     public IEnumerator ExecuteCounterSequence(Transform playerTransform)
     {
+        // 1. 시작할 때 서 있던 순수한 원래 좌표 기억
         Vector3 startPos = transform.position;
-        Vector3 targetPos = playerTransform.position + playerTransform.forward * counterDistance;
-        targetPos.y = transform.position.y;
 
-        transform.LookAt(new Vector3(playerTransform.position.x, transform.position.y, playerTransform.position.z));
+        // [회전 없이 좌표만 연산] 캐릭터 앞 위치 설정
+        Vector3 directionToPlayer = (playerTransform.position - startPos).normalized;
+        Vector3 targetPos = playerTransform.position - directionToPlayer * counterDistance;
+        targetPos.y = startPos.y;
 
         if (bossAnim != null)
         {
@@ -216,6 +223,7 @@ public class BossEnemy : Enemy
             Debug.Log("<color=cyan>[Animation] 보스 반격 공격 발동!</color>");
         }
 
+        // 2. 캐릭터 앞으로 돌진 기동
         float elapsed = 0f;
         while (elapsed < 0.3f)
         {
@@ -235,8 +243,7 @@ public class BossEnemy : Enemy
 
         yield return new WaitForSeconds(0.5f);
 
-        transform.LookAt(new Vector3(startPos.x, transform.position.y, startPos.z));
-
+        // 3. 원래 자리로 직선 복귀
         elapsed = 0f;
         while (elapsed < 0.3f)
         {
@@ -246,9 +253,7 @@ public class BossEnemy : Enemy
         }
         transform.position = startPos;
 
-        transform.rotation = bossOriginalRot;
-
-        DisableCounterMode(); // 반격이 끝났으므로 컬러 복구 및 해제
+        DisableCounterMode();
     }
 
     public bool ShouldTriggerEvent() => false;
