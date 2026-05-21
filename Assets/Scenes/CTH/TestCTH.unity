@@ -645,12 +645,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattleCharacter
   maxHp: 100
   normalAttackDamage: 25
-  skillDamage: 100
-  ultimateDamage: 40
+  skillDamage: 50
+  ultimateDamage: 120
   hpBarImage: {fileID: 784201833}
   hitEffectPrefab: {fileID: 2086387529158349520, guid: 12fe7aba9dd93214fa04e335c48d1302, type: 3}
   skillCastEffectPrefab: {fileID: 4772700544749995673, guid: 7a7d32c186901194f8d2e817c1f1e625, type: 3}
   skillHitEffectPrefab: {fileID: 4772700544749995673, guid: 7a7d32c186901194f8d2e817c1f1e625, type: 3}
+--- !u!4 &509692338 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 94e9d7005bf8ee14381a3aace5e9c263, type: 3}
+  m_PrefabInstance: {fileID: 1919548287}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &520763465
 GameObject:
   m_ObjectHideFlags: 0
@@ -1555,7 +1560,6 @@ MonoBehaviour:
   damageTextPrefab: {fileID: 1100266708950504552, guid: e2637b1c0e9673141b914224045d37bc, type: 3}
   ultimateButton: {fileID: 1159750679}
   ultimateGaugeImage: {fileID: 861883561}
-  ultimateTimelinePrefab: {fileID: 8456974602830247376, guid: 9df7346719df1a249b68138c3f290e1d, type: 3}
   normalAttackSFX: {fileID: 8300000, guid: 7d8a605e14cb4174bb3a35dac77262e1, type: 3}
   skillAttackSFX: {fileID: 8300000, guid: 957e13d8f3a6e254aab335e0261b8639, type: 3}
   ultimateAttackSFX: {fileID: 8300000, guid: 7d8a605e14cb4174bb3a35dac77262e1, type: 3}
@@ -2361,6 +2365,123 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1083495480}
   m_CullTransparentMesh: 1
+--- !u!1001 &1125051412
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1317832124073710102, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.71
+      objectReference: {fileID: 0}
+    - target: {fileID: 1317832124073710102, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.80184
+      objectReference: {fileID: 0}
+    - target: {fileID: 1317832124073710102, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.46
+      objectReference: {fileID: 0}
+    - target: {fileID: 1317832124073710102, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1317832124073710102, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1317832124073710102, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1317832124073710102, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1317832124073710102, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1317832124073710102, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1317832124073710102, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1655705634961247253, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: Target.TrackingTarget
+      value: 
+      objectReference: {fileID: 509692338}
+    - target: {fileID: 1663390161284745589, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: field of view
+      value: 19
+      objectReference: {fileID: 0}
+    - target: {fileID: 1663390161284745589, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: near clip plane
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 1835891525577160241, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_Name
+      value: Ultmate_Skill_Refair
+      objectReference: {fileID: 0}
+    - target: {fileID: 1835891525577160241, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5474869544294841015, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.6251798
+      objectReference: {fileID: 0}
+    - target: {fileID: 5474869544294841015, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.80184
+      objectReference: {fileID: 0}
+    - target: {fileID: 5474869544294841015, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -7.8690796
+      objectReference: {fileID: 0}
+    - target: {fileID: 6618489320345677858, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: Target.TrackingTarget
+      value: 
+      objectReference: {fileID: 509692338}
+    - target: {fileID: 7196129748371673843, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.39999998
+      objectReference: {fileID: 0}
+    - target: {fileID: 7196129748371673843, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.47
+      objectReference: {fileID: 0}
+    - target: {fileID: 7196129748371673843, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.39999998
+      objectReference: {fileID: 0}
+    - target: {fileID: 7196129748371673843, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7169088
+      objectReference: {fileID: 0}
+    - target: {fileID: 7196129748371673843, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7196129748371673843, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.697167
+      objectReference: {fileID: 0}
+    - target: {fileID: 7196129748371673843, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
 --- !u!1 &1159750677
 GameObject:
   m_ObjectHideFlags: 0
@@ -2445,6 +2566,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
+      - m_Target: {fileID: 1538152469}
+        m_TargetAssemblyTypeName: CutScene, Assembly-CSharp
+        m_MethodName: UltimateSkill
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
       - m_Target: {fileID: 937978258}
         m_TargetAssemblyTypeName: BattleManager, Assembly-CSharp
         m_MethodName: OnUltimateButtonClick
@@ -3032,6 +3165,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1410184281}
   m_CullTransparentMesh: 1
+--- !u!114 &1538152469 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5179398615764222673, guid: d4eb6b76d0fdd19468a5bea4c3b39479, type: 3}
+  m_PrefabInstance: {fileID: 1125051412}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a310838d56586524cb4b7031204f9ee7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CutScene
 --- !u!1 &1581313196
 GameObject:
   m_ObjectHideFlags: 0
@@ -4246,3 +4390,4 @@ SceneRoots:
   - {fileID: 1262736138}
   - {fileID: 883804313}
   - {fileID: 375639859}
+  - {fileID: 1125051412}

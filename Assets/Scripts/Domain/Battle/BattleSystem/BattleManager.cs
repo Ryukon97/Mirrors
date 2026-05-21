@@ -35,12 +35,6 @@ public class BattleManager : MonoBehaviour
     private const float MAX_GAUGE = 100f;
     private const float GAUGE_PER_ATTACK = 25f;
 
-    // ---------------- [수정: 타임라인 프리펩 할당] ----------------
-    [Header("Ultimate Timeline Settings")]
-    [Tooltip("프로젝트 창에 있는 궁극기 타임라인 프리펩 파일을 드래그해서 넣으세요.")]
-    public GameObject ultimateTimelinePrefab;
-    // -----------------------------------------------------------
-
     [Header("Audio Settings (SFX)")]
     public AudioClip normalAttackSFX;
     public AudioClip skillAttackSFX;
@@ -195,66 +189,51 @@ public class BattleManager : MonoBehaviour
     }
 
     // ---------------- [수정: 프리펩을 생성하여 궁극기 연출 재생] ----------------
+    // ---------------- [수정: 버튼 클릭 후 4.8초 뒤에 적 전체 타격] ----------------
     private IEnumerator UltimateThreeHitSequence()
     {
         CurrentState = EBattleState.Busy;
         currentGauge = 0f;
         UpdateUltimateUI();
 
-        if (ultimateTimelinePrefab != null)
+        // 1. 6.6초 동안 분리된 컷씬 연출을 감상하며 대기합니다.
+        yield return new WaitForSeconds(6.6f);
+
+        // 2. 대기 종료 후 현재 살아있는 모든 적 목록 확보
+        List<Enemy> targets = GetEnemies();
+
+        if (targets.Count > 0 && player != null)
         {
-            // 1. 프리펩을 씬에 생성합니다.
-            GameObject timelineInstance = Instantiate(ultimateTimelinePrefab);
-            PlayableDirector director = timelineInstance.GetComponent<PlayableDirector>();
+            // 궁극기 폭발 사운드 실행
+            PlaySFX(ultimateAttackSFX);
 
-            if (director != null)
+            // [수정 핵심] 캐릭터당 순수 기본 대미지인 120만 주도록 배율(*3) 제거!
+            int pureUltimateDamage = player.UltimateDamage;
+
+            // 모든 적을 순회하며 정확히 120 대미지씩 일괄 타격
+            foreach (var enemy in targets)
             {
-                // [자동 바인딩 로직] 프리펩 타임라인의 트랙에 플레이어와 카메라를 꽂아줍니다.
-                TimelineAsset asset = director.playableAsset as TimelineAsset;
-                foreach (var track in asset.GetOutputTracks())
+                if (enemy == null || enemy.gameObject == null || enemy.CurrentHp <= 0) continue;
+
+                // 보스의 반격 모드 예외 처리
+                BossEnemy boss = enemy as BossEnemy;
+                if (boss != null && boss.isCounterMode)
                 {
-                    // 트랙 이름에 "Player"가 들어가면 플레이어 바인딩
-                    if (track.name.Contains("Player") && player != null)
-                        director.SetGenericBinding(track, player.gameObject);
-
-                    // 트랙 이름에 "Camera"가 들어가면 메인 카메라 바인딩
-                    else if (track.name.Contains("Camera") && Camera.main != null)
-                        director.SetGenericBinding(track, Camera.main.gameObject);
+                    yield return StartCoroutine(boss.ExecuteCounterSequence(player.transform));
                 }
-
-                // 2. 재생
-                director.Play();
-
-                // 3. 연출이 끝날 때까지 기다립니다.
-                while (director.state == PlayState.Playing)
+                else
                 {
-                    yield return null;
+                    // 각 적들에게 정직하게 120 대미지 적용 (턴 대미지 UI도 120만 누적)
+                    enemy.TakeDamage(pureUltimateDamage);
                 }
-
-                // 4. 연출이 끝나면 프리펩 인스턴스를 삭제합니다.
-                Destroy(timelineInstance);
             }
         }
 
-        // 연출 종료 후 기존 하던 3연타 타격 처리
-        for (int i = 0; i < 3; i++)
-        {
-            CheckTargetHealth();
-            if (currentTarget == null || player == null) break;
-
-            yield return StartCoroutine(player.AttackSequence(currentTarget, "Ultimate"));
-
-            if (currentTarget != null)
-            {
-                PlaySFX(ultimateAttackSFX);
-                currentTarget.TakeDamage(player.UltimateDamage);
-            }
-
-            yield return new WaitForSeconds(0.2f);
-        }
-
+        // 대미지 텍스트 정돈을 위해 0.5초 대기 후 다음 턴 진행
+        yield return new WaitForSeconds(0.5f);
         yield return StartCoroutine(FinishPlayerTurn());
     }
+    // ----------------------------------------------------------------------------------------
 
     private IEnumerator WaitTurnSequence()
     {

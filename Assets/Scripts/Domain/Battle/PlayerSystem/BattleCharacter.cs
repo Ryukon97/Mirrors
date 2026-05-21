@@ -14,18 +14,18 @@ public class BattleCharacter : MonoBehaviour
     [SerializeField] private int maxHp = 100;
     private int currentHp;
 
-    [Header("Damage Settings")] // 데미지 수치 통합 관리
+    [Header("Damage Settings")]
     [SerializeField] private int normalAttackDamage = 25;
-    [SerializeField] private int skillDamage = 40;        // 스킬 데미지 상향 (기존 30 -> 60)
-    [SerializeField] private int ultimateDamage = 25;     // 궁극기 타당 데미지
+    [SerializeField] private int skillDamage = 40;
+    [SerializeField] private int ultimateDamage = 120;     // 궁극기 기본 대미지 (120)
 
     [Header("UI")]
     public Image hpBarImage;
 
     [Header("Effects")]
-    public GameObject hitEffectPrefab;      // 일반 타격 이펙트
-    public GameObject skillCastEffectPrefab; // [추가] 스킬 시전 시 캐릭터에게 나올 이펙트
-    public GameObject skillHitEffectPrefab;  // [추가] 스킬 타격 시 적들에게 터질 이펙트
+    public GameObject hitEffectPrefab;
+    public GameObject skillCastEffectPrefab;
+    public GameObject skillHitEffectPrefab;
 
     private Vector3 originalPosition;
     private Quaternion originalRotation;
@@ -37,7 +37,7 @@ public class BattleCharacter : MonoBehaviour
     public int CurrentHp => currentHp;
     public int NormalAttackDamage => normalAttackDamage;
     public int SkillDamage => skillDamage;
-    public int UltimateDamage => ultimateDamage;
+    public int UltimateDamage => ultimateDamage; // BattleManager에서 이 값을 가져갑니다.
 
     private void Awake()
     {
@@ -45,7 +45,6 @@ public class BattleCharacter : MonoBehaviour
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
 
-        // Awake 시점에 최초 배치된 위치와 회전값을 정확히 기억합니다.
         originalPosition = transform.position;
         originalRotation = transform.rotation;
     }
@@ -53,36 +52,24 @@ public class BattleCharacter : MonoBehaviour
     private void Start()
     {
         currentHp = maxHp;
-
-        // Start 시점에도 애니메이션 초기화 등으로 밀리는 것을 방지하기 위해 재고정
         transform.position = originalPosition;
         transform.rotation = originalRotation;
-
         UpdateHpUI();
     }
 
     public void Heal(int amount)
     {
         currentHp += amount;
-
-        // 최대 체력을 넘지 않도록 제한
         if (currentHp > maxHp) currentHp = maxHp;
-
         Debug.Log($"<color=green>[Heal]</color> {amount} 회복! (현재: {currentHp}/{maxHp})");
-
-        // HP UI 업데이트 (기존 메서드 호출)
         UpdateHpUI();
     }
 
-    // ---------------------------------------------------------
-    // [핵심 수정] 공격 시퀀스: 어떤 타입의 공격인지 인자를 추가로 받음
-    // ---------------------------------------------------------
     public IEnumerator AttackSequence(Enemy target, string attackType = "Normal")
     {
         if (isAttacking) yield break;
         isAttacking = true;
 
-        // 공격 시작 전 적을 향해 회전
         if (target != null)
         {
             Vector3 targetDirection = new Vector3(target.transform.position.x, transform.position.y, target.transform.position.z);
@@ -114,8 +101,6 @@ public class BattleCharacter : MonoBehaviour
         else
         {
             if (anim != null) anim.SetBool("Attack", true);
-
-            // 앞으로 날아가서 타격하는 타이밍까지 대기 (1.6초)
             yield return new WaitForSeconds(1.6f);
 
             if (hitEffectPrefab != null && target != null)
@@ -124,30 +109,20 @@ public class BattleCharacter : MonoBehaviour
                 Destroy(effect, 1.5f);
             }
 
-            // 타격 후 후속 모션 대기 (0.3초)
             yield return new WaitForSeconds(0.3f);
-
-            // 애니메이션 종료 요청 (Idle 복귀 시작)
             if (anim != null) anim.SetBool("Attack", false);
-
-            // 앞으로 날아갔던 애니메이션 연산이 끝날 수 있도록 한 프레임 대기 후 다음 로직 수행
             yield return null;
         }
 
-        // --- 밀림 및 방향 틀어짐 방지 핵심 로직 (보강됨) ---
-
-        // 1. 애니메이션 이동으로 쌓인 물리 속도 완전히 리셋
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
 
-        // 2. 처음 시작할 때의 절대 좌표와 정면 회전값으로 덮어쓰기
         transform.position = originalPosition;
         transform.rotation = originalRotation;
 
-        // 3. 애니메이션 상태가 완벽히 Idle로 전환될 때까지 확실하게 좌표를 고정 (0.2초간 매 프레임 고정)
         float elapsed = 0f;
         while (elapsed < 0.2f)
         {
