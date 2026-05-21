@@ -9,9 +9,11 @@ public class PlayerSubState_Move : PlayerSubState_Base
 
 	InputAction moveAction = PlayerInputReciever.Instance.MoveAction;
 	InputAction sprintAction = PlayerInputReciever.Instance.SprintAction;
-	public PlayerSubState_Move(float speed, float rotSpeed) : base()
-	{
-		this.speed = speed;
+    public static int locks;
+    public PlayerSubState_Move(float speed, float rotSpeed) : base()
+    {
+        locks = 0;
+        this.speed = speed;
 		this.rotSpeed = rotSpeed;
 	}
 	public override void OnEnter(PlayerState_Base baseState, Player player)
@@ -22,8 +24,9 @@ public class PlayerSubState_Move : PlayerSubState_Base
 	{
 	}
 	public override void OnUpdate(PlayerState_Base baseState, Player player)
-	{
-		Vector2 v = moveAction.ReadValue<Vector2>();
+    {
+        if (locks > 0) return;
+        Vector2 v = moveAction.ReadValue<Vector2>();
 
 		Vector3 dir = player.camTarget.forward * v.y + player.camTarget.right * v.x;
 		dir.y = 0;
