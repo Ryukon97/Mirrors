@@ -11,6 +11,8 @@ public class SettingManager : MonoBehaviour
     [Header("밝기 조절")]
     public Image BrightnessOverlay;
     public Slider BrightnessSlider;
+    public Slider mouseXSlider;
+    public Slider mouseYSlider;
 
     [Header("사운드 조절")]
     public Slider SoundSlider;
@@ -58,9 +60,11 @@ public class SettingManager : MonoBehaviour
     {
         PlayerPrefs.SetFloat("SavedBrightness", BrightnessSlider.value);
         PlayerPrefs.SetFloat("SavedSound", SoundSlider.value);
-    
+        PlayerPrefs.SetFloat("mouseXSlider", mouseXSlider.value);
+        PlayerPrefs.SetFloat("mouseYSlider", mouseYSlider.value);
         PlayerPrefs.Save();
-      
+        if (Player.Instance != null)
+            Player.Instance.UpdateMouseSense();
     }
 
     public void OpenSettingPanel()
