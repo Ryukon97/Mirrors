@@ -129,7 +129,8 @@ public class BattleCharacter : MonoBehaviour
 
             if (hitEffectPrefab != null && target != null)
             {
-                GameObject effect = Instantiate(hitEffectPrefab, target.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                Quaternion normalRot = Quaternion.Euler(90f, 0f, 0f);
+                GameObject effect = Instantiate(hitEffectPrefab, target.transform.position + Vector3.up * 0.5f, normalRot);
                 Destroy(effect, 1.5f);
             }
 
