@@ -25,13 +25,17 @@ public class Player : MonoBehaviour
     }
     private void Start()
     {
+        TPToSpawn();
+        UpdateMouseSense();
+    }
+    public void TPToSpawn()
+    {
         if (WorldDataMemorizer.Instance != null)
         {
             controller.enabled = false;
             transform.position = WorldDataMemorizer.Instance.data.lastPlayerSpawnPoint;
             controller.enabled = true;
         }
-        UpdateMouseSense();
     }
     public void UpdateMouseSense()
     {
@@ -40,6 +44,7 @@ public class Player : MonoBehaviour
     }
     private void Update()
     {
+        if (transform.position.y < -5f) TPToSpawn();
         FSM.UpdateState();
     }
     private void OnDestroy()
