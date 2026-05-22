@@ -4,8 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using TMPro;
-using UnityEngine.Playables; // 타임라인 재생용
-using UnityEngine.Timeline;  // 타임라인 데이터 수정용
 
 [RequireComponent(typeof(AudioSource))]
 public class BattleManager : MonoBehaviour
@@ -14,6 +12,7 @@ public class BattleManager : MonoBehaviour
 
     [Header("Characters")]
     public BattleCharacter player;
+    // 일반 적들도 스타트 시점에 이 리스트에 미리 채워져 있다고 가정합니다.
     public List<Enemy> enemies = new List<Enemy>();
 
     [Header("UI References")]
@@ -64,6 +63,7 @@ public class BattleManager : MonoBehaviour
     private List<BattleUnitOrder> turnTimeline = new List<BattleUnitOrder>();
     private List<GameObject> activeTimelineIcons = new List<GameObject>();
 
+    // 겉으로는 읽기 전용이지만 내부에서는 자유롭게 수정 가능하도록 private set 유지
     public EBattleState CurrentState { get; private set; }
     private Enemy currentTarget;
 
@@ -80,6 +80,13 @@ public class BattleManager : MonoBehaviour
     private void Start()
     {
         CurrentState = EBattleState.Start;
+
+        // 씬 시작 시 enemies 리스트가 비어있다면 방어 코드로 채워줌 (최초 1회만)
+        if (enemies == null || enemies.Count == 0)
+        {
+            enemies = new List<Enemy>(FindObjectsByType<Enemy>(FindObjectsInactive.Exclude));
+        }
+
         UpdateUltimateUI();
         UpdateManaUI();
         UpdateDamageUI();
@@ -91,42 +98,38 @@ public class BattleManager : MonoBehaviour
 
     public void OnAttackButtonClick()
     {
-        if (Time.timeScale == 0f) return;
-        if (CurrentState != EBattleState.PlayerTurn) return;
+        if (Time.timeScale == 0f || CurrentState != EBattleState.PlayerTurn) return;
         ResetTurnDamage();
         StartCoroutine(PlayerTurnSequence());
     }
 
     public void OnSkillButtonClick()
     {
-        if (Time.timeScale == 0f) return;
-        if (CurrentState != EBattleState.PlayerTurn || currentMana < SKILL_COST) return;
+        if (Time.timeScale == 0f || CurrentState != EBattleState.PlayerTurn || currentMana < SKILL_COST) return;
         ResetTurnDamage();
         StartCoroutine(ExecuteFullAOESkill());
     }
 
     public void OnUltimateButtonClick()
     {
-        if (Time.timeScale == 0f) return;
-        if (CurrentState != EBattleState.PlayerTurn || currentGauge < MAX_GAUGE) return;
+        if (Time.timeScale == 0f || CurrentState != EBattleState.PlayerTurn || currentGauge < MAX_GAUGE) return;
         ResetTurnDamage();
         StartCoroutine(UltimateThreeHitSequence());
     }
 
     public void OnWaitButtonClicked()
     {
-        if (Time.timeScale == 0f) return;
-        if (CurrentState != EBattleState.PlayerTurn) return;
+        if (Time.timeScale == 0f || CurrentState != EBattleState.PlayerTurn) return;
         ResetTurnDamage();
         StartCoroutine(WaitTurnSequence());
     }
 
     // --------------- 핵심 전투 흐름 제어 ------------------
 
+    // 최적화: 매번 Find하지 않고 관리 중인 리스트를 안전하게 복사하여 반환
     public List<Enemy> GetEnemies()
     {
-        if (isBossSpawned) return new List<Enemy>(enemies);
-        return new List<Enemy>(FindObjectsByType<Enemy>(FindObjectsInactive.Exclude));
+        return new List<Enemy>(enemies);
     }
 
     private IEnumerator PlayerTurnSequence()
@@ -140,8 +143,7 @@ public class BattleManager : MonoBehaviour
 
             if (currentTarget != null)
             {
-                BossEnemy boss = currentTarget as BossEnemy;
-                if (boss != null && boss.isCounterMode)
+                if (currentTarget is BossEnemy boss && boss.isCounterMode)
                 {
                     yield return StartCoroutine(boss.ExecuteCounterSequence(player.transform));
                 }
@@ -171,10 +173,9 @@ public class BattleManager : MonoBehaviour
 
         foreach (var e in targets)
         {
-            if (e == null || e.gameObject == null || e.CurrentHp <= 0) continue;
+            if (e == null || e.CurrentHp <= 0) continue;
 
-            BossEnemy boss = e as BossEnemy;
-            if (boss != null && boss.isCounterMode)
+            if (e is BossEnemy boss && boss.isCounterMode)
             {
                 yield return StartCoroutine(boss.ExecuteCounterSequence(player.transform));
             }
@@ -188,52 +189,41 @@ public class BattleManager : MonoBehaviour
         yield return StartCoroutine(FinishPlayerTurn());
     }
 
-    // ---------------- [수정: 프리펩을 생성하여 궁극기 연출 재생] ----------------
-    // ---------------- [수정: 버튼 클릭 후 4.8초 뒤에 적 전체 타격] ----------------
     private IEnumerator UltimateThreeHitSequence()
     {
         CurrentState = EBattleState.Busy;
         currentGauge = 0f;
         UpdateUltimateUI();
 
-        // 1. 6.6초 동안 분리된 컷씬 연출을 감상하며 대기합니다.
+        // 1. 6.6초 동안 컷씬 연출 대기
         yield return new WaitForSeconds(6.6f);
 
-        // 2. 대기 종료 후 현재 살아있는 모든 적 목록 확보
+        // 2. 대기 종료 후 타겟 확보 및 공격
         List<Enemy> targets = GetEnemies();
 
         if (targets.Count > 0 && player != null)
         {
-            // 궁극기 폭발 사운드 실행
             PlaySFX(ultimateAttackSFX);
-
-            // [수정 핵심] 캐릭터당 순수 기본 대미지인 120만 주도록 배율(*3) 제거!
             int pureUltimateDamage = player.UltimateDamage;
 
-            // 모든 적을 순회하며 정확히 120 대미지씩 일괄 타격
             foreach (var enemy in targets)
             {
-                if (enemy == null || enemy.gameObject == null || enemy.CurrentHp <= 0) continue;
+                if (enemy == null || enemy.CurrentHp <= 0) continue;
 
-                // 보스의 반격 모드 예외 처리
-                BossEnemy boss = enemy as BossEnemy;
-                if (boss != null && boss.isCounterMode)
+                if (enemy is BossEnemy boss && boss.isCounterMode)
                 {
                     yield return StartCoroutine(boss.ExecuteCounterSequence(player.transform));
                 }
                 else
                 {
-                    // 각 적들에게 정직하게 120 대미지 적용 (턴 대미지 UI도 120만 누적)
                     enemy.TakeDamage(pureUltimateDamage);
                 }
             }
         }
 
-        // 대미지 텍스트 정돈을 위해 0.5초 대기 후 다음 턴 진행
         yield return new WaitForSeconds(0.5f);
         yield return StartCoroutine(FinishPlayerTurn());
     }
-    // ----------------------------------------------------------------------------------------
 
     private IEnumerator WaitTurnSequence()
     {
@@ -306,7 +296,7 @@ public class BattleManager : MonoBehaviour
 
     private void CheckTargetHealth()
     {
-        if (currentTarget == null || currentTarget.gameObject == null || currentTarget.CurrentHp <= 0)
+        if (currentTarget == null || currentTarget.CurrentHp <= 0)
         {
             AutoTargetNext();
         }
@@ -351,7 +341,7 @@ public class BattleManager : MonoBehaviour
     private void AutoTargetNext()
     {
         if (enemies == null || enemies.Count == 0) { currentTarget = null; return; }
-        currentTarget = enemies.Find(e => e != null && e.gameObject != null && e.CurrentHp > 0);
+        currentTarget = enemies.Find(e => e != null && e.CurrentHp > 0);
         if (currentTarget != null) currentTarget.SetSelection(true);
     }
 
@@ -366,7 +356,7 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            if (nextUnit.enemyReference == null || nextUnit.enemyReference.gameObject == null)
+            if (nextUnit.enemyReference == null || nextUnit.enemyReference.CurrentHp <= 0)
             {
                 CycleFinishedUnit();
                 DetermineNextTurn();
@@ -383,10 +373,9 @@ public class BattleManager : MonoBehaviour
         BattleUnitOrder currentUnit = turnTimeline[0];
         Enemy actingEnemy = currentUnit.enemyReference;
 
-        if (actingEnemy != null && actingEnemy.gameObject != null && actingEnemy.CurrentHp > 0)
+        if (actingEnemy != null && actingEnemy.CurrentHp > 0)
         {
-            BossEnemy boss = actingEnemy as BossEnemy;
-            if (boss != null)
+            if (actingEnemy is BossEnemy boss)
             {
                 if (boss.ShouldTriggerEvent())
                 {
@@ -437,8 +426,9 @@ public class BattleManager : MonoBehaviour
     private void SetBattleState(EBattleState newState)
     {
         if (newState == EBattleState.Won && isVictoryLocked) return;
-        var field = typeof(BattleManager).GetProperty("CurrentState");
-        if (field != null) field.SetValue(this, newState);
+
+        // 최적화: 리플렉션 제거하고 직관적으로 대입
+        CurrentState = newState;
     }
 
     private void InitializeTimeline()
@@ -471,6 +461,7 @@ public class BattleManager : MonoBehaviour
 
     private void UpdateTimelineUI()
     {
+        // TODO: 장기적으로는 성능 향상을 위해 UI 풀링(Pooling) 방식을 적용하는 것을 권장합니다.
         foreach (GameObject icon in activeTimelineIcons) Destroy(icon);
         activeTimelineIcons.Clear();
         if (turnTimeline.Count == 0) return;
