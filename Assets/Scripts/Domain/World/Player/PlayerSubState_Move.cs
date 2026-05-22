@@ -25,7 +25,11 @@ public class PlayerSubState_Move : PlayerSubState_Base
 	}
 	public override void OnUpdate(PlayerState_Base baseState, Player player)
     {
-        if (locks > 0) return;
+		if (locks > 0)
+        {
+            player.anim.SetFloat("Speed", 0);
+            return;
+		}
         Vector2 v = moveAction.ReadValue<Vector2>();
 
 		Vector3 dir = player.camTarget.forward * v.y + player.camTarget.right * v.x;

@@ -31,6 +31,12 @@ public class Player : MonoBehaviour
             transform.position = WorldDataMemorizer.Instance.data.lastPlayerSpawnPoint;
             controller.enabled = true;
         }
+        UpdateMouseSense();
+    }
+    public void UpdateMouseSense()
+    {
+        mouseSenceY = Mathf.Max(PlayerPrefs.GetFloat("mouseYSlider") * 80f, 10f);
+        mouseSenceX = Mathf.Max(PlayerPrefs.GetFloat("mouseXSlider") * 80f, 10f);
     }
     private void Update()
     {
