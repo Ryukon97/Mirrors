@@ -26,6 +26,7 @@ public class BattleManager : MonoBehaviour
 
     [Header("Damage Floating UI Settings")]
     public GameObject damageTextPrefab;
+    public GameObject hitEffectPrefab;
 
     [Header("Ultimate System")]
     public Button ultimateButton;
@@ -150,7 +151,10 @@ public class BattleManager : MonoBehaviour
                 else
                 {
                     PlaySFX(normalAttackSFX);
+                    Quaternion normalRot = Quaternion.Euler(90f, 0f, 0f);
+                    GameObject effect = Instantiate(hitEffectPrefab, currentTarget.transform.position + Vector3.up * 0.5f, normalRot);
                     currentTarget.TakeDamage(player.NormalAttackDamage);
+
                 }
             }
             GainMana(MANA_REGAIN);
@@ -181,6 +185,7 @@ public class BattleManager : MonoBehaviour
             }
             else
             {
+
                 e.TakeDamage(player.SkillDamage);
             }
         }
