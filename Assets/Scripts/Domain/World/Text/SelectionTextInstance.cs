@@ -7,6 +7,7 @@ public class SelectionTextInstance : MonoBehaviour
 {
     public List<GameObject> buttons { get; private set; }
     public List<TextMeshProUGUI> tmpros;
+    public Image illust;
 
     private void Awake()
     {

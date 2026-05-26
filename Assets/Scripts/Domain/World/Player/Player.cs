@@ -25,6 +25,11 @@ public class Player : MonoBehaviour
     }
     private void Start()
     {
+        TPToSpawn();
+        UpdateMouseSense();
+    }
+    public void TPToSpawn()
+    {
         if (WorldDataMemorizer.Instance != null)
         {
             controller.enabled = false;
@@ -32,8 +37,14 @@ public class Player : MonoBehaviour
             controller.enabled = true;
         }
     }
+    public void UpdateMouseSense()
+    {
+        mouseSenceY = Mathf.Max(PlayerPrefs.GetFloat("mouseYSlider") * 80f, 10f);
+        mouseSenceX = Mathf.Max(PlayerPrefs.GetFloat("mouseXSlider") * 80f, 10f);
+    }
     private void Update()
     {
+        if (transform.position.y < -5f) TPToSpawn();
         FSM.UpdateState();
     }
     private void OnDestroy()
