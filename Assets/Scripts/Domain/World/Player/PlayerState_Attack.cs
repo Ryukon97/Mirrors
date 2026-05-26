@@ -28,6 +28,7 @@ public class PlayerState_Attack : PlayerState_Base
         foreach (var state in subStates)
             state.OnEnter(this, player);
         enteredT = Time.time;
+        player.SFXAudio.PlayOneShot(player.AttackSFX);
         attacked = false;
         player.anim.SetTrigger("OnAttacked");
     }
@@ -56,7 +57,6 @@ public class PlayerState_Attack : PlayerState_Base
     void SpawnAttack()
     {
         player.AttackEffect.Play();
-        player.SFXAudio.PlayOneShot(player.AttackSFX);
         TryDestroyTargets();
     }
 
