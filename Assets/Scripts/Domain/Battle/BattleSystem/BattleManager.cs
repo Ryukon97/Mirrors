@@ -5,12 +5,14 @@ using System.Collections.Generic;
 using System;
 using TMPro;
 
+[RequireComponent(typeof(AudioSource))]
 public class BattleManager : MonoBehaviour
 {
     public static BattleManager Instance { get; private set; }
 
     [Header("Characters")]
     public BattleCharacter player;
+    // 일반 적들도 스타트 시점에 이 리스트에 미리 채워져 있다고 가정합니다.
     public List<Enemy> enemies = new List<Enemy>();
 
     [Header("UI References")]
@@ -18,19 +20,13 @@ public class BattleManager : MonoBehaviour
     public GameObject playerIconPrefab;
     public GameObject enemyIconPrefab;
 
-    // ---------------- [복구 및 유지: 우측 상단 토탈 데미지 UI 변수] ----------------
     [Header("Damage UI Settings")]
-    [Tooltip("이번 턴에 가한 총 누적 데미지를 표기할 우측 상단 텍스트 컴포넌트")]
     public TextMeshProUGUI totalDamageText;
-
     private int totalDamage = 0;
-    // ----------------------------------------------------------------------------
 
-    // ---------------- [유지: 플로팅 데미지 텍스트 프리랩 등록] ----------------
     [Header("Damage Floating UI Settings")]
-    [Tooltip("적 머리 위에 띄울 3D TextMeshPro 기반의 DamageText 프리랩")]
     public GameObject damageTextPrefab;
-    // ----------------------------------------------------------------------------
+    public GameObject hitEffectPrefab;
 
     [Header("Ultimate System")]
     public Button ultimateButton;
@@ -38,6 +34,12 @@ public class BattleManager : MonoBehaviour
     private float currentGauge = 0f;
     private const float MAX_GAUGE = 100f;
     private const float GAUGE_PER_ATTACK = 25f;
+
+    [Header("Audio Settings (SFX)")]
+    public AudioClip normalAttackSFX;
+    public AudioClip skillAttackSFX;
+    public AudioClip ultimateAttackSFX;
+    private AudioSource audioSource;
 
     [Header("Mana System")]
     public Image manaBarImage;
@@ -62,6 +64,7 @@ public class BattleManager : MonoBehaviour
     private List<BattleUnitOrder> turnTimeline = new List<BattleUnitOrder>();
     private List<GameObject> activeTimelineIcons = new List<GameObject>();
 
+    // 겉으로는 읽기 전용이지만 내부에서는 자유롭게 수정 가능하도록 private set 유지
     public EBattleState CurrentState { get; private set; }
     private Enemy currentTarget;
 
@@ -71,14 +74,23 @@ public class BattleManager : MonoBehaviour
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+
+        audioSource = GetComponent<AudioSource>();
     }
 
     private void Start()
     {
         CurrentState = EBattleState.Start;
+
+        // 씬 시작 시 enemies 리스트가 비어있다면 방어 코드로 채워줌 (최초 1회만)
+        if (enemies == null || enemies.Count == 0)
+        {
+            enemies = new List<Enemy>(FindObjectsByType<Enemy>(FindObjectsInactive.Exclude));
+        }
+
         UpdateUltimateUI();
         UpdateManaUI();
-        UpdateDamageUI(); // 시작할 때 토탈 데미지 텍스트 초기 정렬
+        UpdateDamageUI();
         InitializeTimeline();
         DetermineNextTurn();
     }
@@ -87,42 +99,38 @@ public class BattleManager : MonoBehaviour
 
     public void OnAttackButtonClick()
     {
-        if (Time.timeScale == 0f) return;
-        if (CurrentState != EBattleState.PlayerTurn) return;
-        ResetTurnDamage(); // 다음 공격 시작 시 이전 턴의 토탈 데미지 리셋
+        if (Time.timeScale == 0f || CurrentState != EBattleState.PlayerTurn) return;
+        ResetTurnDamage();
         StartCoroutine(PlayerTurnSequence());
     }
 
     public void OnSkillButtonClick()
     {
-        if (Time.timeScale == 0f) return;
-        if (CurrentState != EBattleState.PlayerTurn || currentMana < SKILL_COST) return;
-        ResetTurnDamage(); // 다음 공격 시작 시 이전 턴의 토탈 데미지 리셋
+        if (Time.timeScale == 0f || CurrentState != EBattleState.PlayerTurn || currentMana < SKILL_COST) return;
+        ResetTurnDamage();
         StartCoroutine(ExecuteFullAOESkill());
     }
 
     public void OnUltimateButtonClick()
     {
-        if (Time.timeScale == 0f) return;
-        if (CurrentState != EBattleState.PlayerTurn || currentGauge < MAX_GAUGE) return;
-        ResetTurnDamage(); // 다음 공격 시작 시 이전 턴의 토탈 데미지 리셋
+        if (Time.timeScale == 0f || CurrentState != EBattleState.PlayerTurn || currentGauge < MAX_GAUGE) return;
+        ResetTurnDamage();
         StartCoroutine(UltimateThreeHitSequence());
     }
 
     public void OnWaitButtonClicked()
     {
-        if (Time.timeScale == 0f) return;
-        if (CurrentState != EBattleState.PlayerTurn) return;
-        ResetTurnDamage(); // 대기 버튼 시에도 리셋
+        if (Time.timeScale == 0f || CurrentState != EBattleState.PlayerTurn) return;
+        ResetTurnDamage();
         StartCoroutine(WaitTurnSequence());
     }
 
     // --------------- 핵심 전투 흐름 제어 ------------------
 
+    // 최적화: 매번 Find하지 않고 관리 중인 리스트를 안전하게 복사하여 반환
     public List<Enemy> GetEnemies()
     {
-        if (isBossSpawned) return new List<Enemy>(enemies);
-        return new List<Enemy>(FindObjectsByType<Enemy>(FindObjectsInactive.Exclude));
+        return new List<Enemy>(enemies);
     }
 
     private IEnumerator PlayerTurnSequence()
@@ -136,14 +144,17 @@ public class BattleManager : MonoBehaviour
 
             if (currentTarget != null)
             {
-                BossEnemy boss = currentTarget as BossEnemy;
-                if (boss != null && boss.isCounterMode)
+                if (currentTarget is BossEnemy boss && boss.isCounterMode)
                 {
                     yield return StartCoroutine(boss.ExecuteCounterSequence(player.transform));
                 }
                 else
                 {
+                    PlaySFX(normalAttackSFX);
+                    Quaternion normalRot = Quaternion.Euler(90f, 0f, 0f);
+                    GameObject effect = Instantiate(hitEffectPrefab, currentTarget.transform.position + Vector3.up * 0.5f, normalRot);
                     currentTarget.TakeDamage(player.NormalAttackDamage);
+
                 }
             }
             GainMana(MANA_REGAIN);
@@ -162,17 +173,19 @@ public class BattleManager : MonoBehaviour
         List<Enemy> targets = GetEnemies();
         yield return StartCoroutine(player.AttackSequence(targets.Count > 0 ? targets[0] : null, "Skill"));
 
+        PlaySFX(skillAttackSFX);
+
         foreach (var e in targets)
         {
-            if (e == null || e.gameObject == null || e.CurrentHp <= 0) continue;
+            if (e == null || e.CurrentHp <= 0) continue;
 
-            BossEnemy boss = e as BossEnemy;
-            if (boss != null && boss.isCounterMode)
+            if (e is BossEnemy boss && boss.isCounterMode)
             {
                 yield return StartCoroutine(boss.ExecuteCounterSequence(player.transform));
             }
             else
             {
+
                 e.TakeDamage(player.SkillDamage);
             }
         }
@@ -187,29 +200,39 @@ public class BattleManager : MonoBehaviour
         currentGauge = 0f;
         UpdateUltimateUI();
 
-        for (int i = 0; i < 3; i++)
+        // 1. 6.6초 동안 컷씬 연출 대기
+        yield return new WaitForSeconds(6.6f);
+
+        // 2. 대기 종료 후 타겟 확보 및 공격
+        List<Enemy> targets = GetEnemies();
+
+        if (targets.Count > 0 && player != null)
         {
-            CheckTargetHealth();
-            if (currentTarget == null || player == null) break;
+            PlaySFX(ultimateAttackSFX);
+            int pureUltimateDamage = player.UltimateDamage;
 
-            yield return StartCoroutine(player.AttackSequence(currentTarget, "Ultimate"));
-
-            if (currentTarget != null)
+            foreach (var enemy in targets)
             {
-                currentTarget.TakeDamage(player.UltimateDamage);
-            }
+                if (enemy == null || enemy.CurrentHp <= 0) continue;
 
-            yield return new WaitForSeconds(0.2f);
+                if (enemy is BossEnemy boss && boss.isCounterMode)
+                {
+                    yield return StartCoroutine(boss.ExecuteCounterSequence(player.transform));
+                }
+                else
+                {
+                    enemy.TakeDamage(pureUltimateDamage);
+                }
+            }
         }
 
+        yield return new WaitForSeconds(0.5f);
         yield return StartCoroutine(FinishPlayerTurn());
     }
 
     private IEnumerator WaitTurnSequence()
     {
         CurrentState = EBattleState.Busy;
-        Debug.Log("<color=yellow>대기: 모든 적의 반격 자세를 파훼하고 재정비합니다.</color>");
-
         foreach (var e in enemies)
         {
             if (e is BossEnemy boss) boss.DisableCounterMode();
@@ -278,7 +301,7 @@ public class BattleManager : MonoBehaviour
 
     private void CheckTargetHealth()
     {
-        if (currentTarget == null || currentTarget.gameObject == null || currentTarget.CurrentHp <= 0)
+        if (currentTarget == null || currentTarget.CurrentHp <= 0)
         {
             AutoTargetNext();
         }
@@ -323,7 +346,7 @@ public class BattleManager : MonoBehaviour
     private void AutoTargetNext()
     {
         if (enemies == null || enemies.Count == 0) { currentTarget = null; return; }
-        currentTarget = enemies.Find(e => e != null && e.gameObject != null && e.CurrentHp > 0);
+        currentTarget = enemies.Find(e => e != null && e.CurrentHp > 0);
         if (currentTarget != null) currentTarget.SetSelection(true);
     }
 
@@ -335,11 +358,10 @@ public class BattleManager : MonoBehaviour
         if (nextUnit.unitType == ECharacterType.Player)
         {
             CurrentState = EBattleState.PlayerTurn;
-            Debug.Log("<color=green>[Turn] 플레이어 차례입니다. UI 활성화 완료.</color>");
         }
         else
         {
-            if (nextUnit.enemyReference == null || nextUnit.enemyReference.gameObject == null)
+            if (nextUnit.enemyReference == null || nextUnit.enemyReference.CurrentHp <= 0)
             {
                 CycleFinishedUnit();
                 DetermineNextTurn();
@@ -356,10 +378,9 @@ public class BattleManager : MonoBehaviour
         BattleUnitOrder currentUnit = turnTimeline[0];
         Enemy actingEnemy = currentUnit.enemyReference;
 
-        if (actingEnemy != null && actingEnemy.gameObject != null && actingEnemy.CurrentHp > 0)
+        if (actingEnemy != null && actingEnemy.CurrentHp > 0)
         {
-            BossEnemy boss = actingEnemy as BossEnemy;
-            if (boss != null)
+            if (actingEnemy is BossEnemy boss)
             {
                 if (boss.ShouldTriggerEvent())
                 {
@@ -411,8 +432,8 @@ public class BattleManager : MonoBehaviour
     {
         if (newState == EBattleState.Won && isVictoryLocked) return;
 
-        var field = typeof(BattleManager).GetProperty("CurrentState");
-        if (field != null) field.SetValue(this, newState);
+        // 최적화: 리플렉션 제거하고 직관적으로 대입
+        CurrentState = newState;
     }
 
     private void InitializeTimeline()
@@ -445,6 +466,7 @@ public class BattleManager : MonoBehaviour
 
     private void UpdateTimelineUI()
     {
+        // TODO: 장기적으로는 성능 향상을 위해 UI 풀링(Pooling) 방식을 적용하는 것을 권장합니다.
         foreach (GameObject icon in activeTimelineIcons) Destroy(icon);
         activeTimelineIcons.Clear();
         if (turnTimeline.Count == 0) return;
@@ -473,17 +495,11 @@ public class BattleManager : MonoBehaviour
         return true;
     }
 
-    // ---------------- [수정 영역: 토탈 연산 및 플로팅 스폰 통합 처리] ----------------
-    /// <summary>
-    /// 외부(Enemy.cs)에서 데미지를 입었을 때 호출하여 토탈 누적량을 올리고 적 위에 숫자를 띄웁니다.
-    /// </summary>
     public void SpawnDamageText(Vector3 worldPosition, int damageAmount)
     {
-        // 1. 이번 턴에 가한 데미지를 실시간 누적시키고 우측 상단 UI 텍스트 새로고침
         totalDamage += damageAmount;
         UpdateDamageUI();
 
-        // 2. 적 머리 위에 플로팅 팝업 텍스트 프리랩 생성
         if (damageTextPrefab == null) return;
         Vector3 spawnPosition = worldPosition + Vector3.up * 2.0f;
         GameObject dmgObj = Instantiate(damageTextPrefab, spawnPosition, Quaternion.identity);
@@ -500,9 +516,6 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 이번 턴의 총 누적 데미지를 우측 상단 UI 텍스트 컴포넌트에 반영
-    /// </summary>
     private void UpdateDamageUI()
     {
         if (totalDamageText != null)
@@ -511,13 +524,17 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 플레이어 공격 행동 시작 시 턴 누적 수치를 0으로 리셋해 주는 함수
-    /// </summary>
     private void ResetTurnDamage()
     {
         totalDamage = 0;
         UpdateDamageUI();
     }
-    // ----------------------------------------------------------------------------------
+
+    private void PlaySFX(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
+    }
 }
